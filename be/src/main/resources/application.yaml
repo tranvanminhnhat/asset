@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: asset
+  datasource:
+    url: jdbc:mysql://localhost:3306/asset_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    jpa:
+      hibernate:
+        ddl-auto: none   # none | update | create | create-drop
+      show-sql: true
+      properties:
+        hibernate:
+          format_sql: true
+      database-platform: org.hibernate.dialect.MySQL8Dialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tranvanminhnhat99@gmail.com      # Gmail của bạn
+    password: xsxw nqab vesg hzfp       # App Password
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  messages:
+    basename: messages
+    encoding: UTF-8
