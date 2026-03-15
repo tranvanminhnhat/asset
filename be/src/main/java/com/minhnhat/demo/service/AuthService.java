@@ -6,11 +6,17 @@ import com.minhnhat.demo.common.mail.MailService;
 import com.minhnhat.demo.common.mail.MailTemplateType;
 import com.minhnhat.demo.config.MessageService;
 import com.minhnhat.demo.dto.enums.VerificationStatus;
+import com.minhnhat.demo.dto.request.LoginRequest;
 import com.minhnhat.demo.dto.request.RegisterAccountRequest;
+import com.minhnhat.demo.dto.response.LoginResponse;
 import com.minhnhat.demo.dto.response.RegisterAccountResponse;
 import com.minhnhat.demo.entity.UserEntity;
 import com.minhnhat.demo.repository.UserRepository;
+import com.minhnhat.demo.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +25,7 @@ import java.util.UUID;
 
 import static com.minhnhat.demo.constant.MessageConstant.REGISTER_LOGIC_ERROR_001;
 import static com.minhnhat.demo.constant.MessageConstant.REGISTER_LOGIC_ERROR_002;
+import static com.minhnhat.demo.dto.enums.VerificationStatus.VERIFIED;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +38,14 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final JwtTokenProvider jwtTokenProvider;
+
     private static final String SERVICE_NAME = "AuthService";
 
-    private static final String url = "http://localhost:8080/auth/verify-email?token=";
+    private static final String URL = "http://localhost:8080/auth/verify-email?token=";
 
     public RegisterAccountResponse registerAccount(RegisterAccountRequest request) {
-        
+
         validateRequest(request);
 
         String token = UUID.randomUUID().toString();
@@ -45,12 +54,63 @@ public class AuthService {
 
         registerNewAccount(request, token, userId);
 
-        String verifyLink = url + token;
+        String verifyLink = URL + token;
 
         sendVerifyMail(request, verifyLink);
 
         return createResponse(userId, request);
     }
+
+    public LoginResponse login(LoginRequest request) {
+        // Get user entity
+        UserEntity userEntity = userRepository.findFirstByEmail(request.getEmail()).orElse(null);
+
+        // Validate request
+        validateLoginRequest(request, userEntity);
+
+        // Create User Principal
+        UserPrincipal principal = UserPrincipal.from(userEntity);
+
+        // Set SecurityContext
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(
+                        principal,
+                        null,
+                        principal.getAuthorities()
+                );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Generate access token
+        String accessToken = jwtTokenProvider.generateToken(principal);
+
+        // Create response
+        return LoginResponse.builder()
+                .userId(userEntity.getUserId())
+                .email(userEntity.getEmail())
+                .status(userEntity.getStatus())
+                .accessToken(accessToken)
+                .build();
+    }
+
+    private void validateLoginRequest(LoginRequest request, UserEntity userEntity) {
+
+        // Check exist user by email
+        if (userEntity == null) {
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        // Check password correctly
+        if (!passwordEncoder.matches(request.getPassword(), userEntity.getPassword())) {
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        // Check account status
+        if (!VERIFIED.getCode().equals(userEntity.getStatus())) {
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+    }
+
 
     private RegisterAccountResponse createResponse(String userId, RegisterAccountRequest request) {
         return RegisterAccountResponse.builder()
@@ -72,7 +132,7 @@ public class AuthService {
         try {
             mailService.send(payload);
         } catch (Exception e) {
-            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002),REGISTER_LOGIC_ERROR_002);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
 
     }
@@ -85,7 +145,7 @@ public class AuthService {
                         .email(request.getEmail())
                         .password(passwordEncoder.encode(request.getPassword()))
                         .token(token)
-                        .isVerified(VerificationStatus.UNVERIFIED.getCode())
+                        .status(VerificationStatus.UNVERIFIED.getCode())
                         .build();
 
         try {
@@ -99,10 +159,8 @@ public class AuthService {
     private void validateRequest(RegisterAccountRequest request) {
 
         // Check exist user by email
-        UserEntity userEntity = userRepository.findFirstByEmail(request.getEmail());
-        if (userEntity != null) {
-            throw new RuntimeException();
-        }
+        UserEntity userEntity = userRepository.findFirstByEmail(request.getEmail())
+                .orElseThrow(() -> new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001));
 
         // Check password and confirm password is not match
         if (!request.getPassword().equals(request.getConfirmPassword())) {
