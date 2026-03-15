@@ -3,8 +3,6 @@ package com.minhnhat.demo.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "USER")
 @Getter
@@ -24,8 +22,8 @@ public class UserEntity extends BaseEntity {
     @Column(name = "PASSWORD", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "IS_VERIFIED", nullable = false)
-    private String isVerified;
+    @Column(name = "STATUS", nullable = false)
+    private String status;
 
     @Column(name = "TOKEN", nullable = false)
     private String token;
