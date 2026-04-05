@@ -1,11 +1,11 @@
 'use client';
 import React from 'react';
-import LoginForm from '../components/RegisterForm';
+import RegisterForm from '../components/RegisterForm';
 
 const RegisterPage: React.FC = () => {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <LoginForm />
+    <div className="min-h-screen bg-[#eff8f1] px-4 py-10 flex items-center justify-center">
+      <RegisterForm />
     </div>
   );
 };
