@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema } from '../validation/register.schema';
@@ -98,6 +99,15 @@ const RegisterForm: React.FC = () => {
           <p className="text-center text-sm text-emerald-700">Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.</p>
         )}
       </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-slate-500">
+          Đã có tài khoản?{' '}
+          <Link href="/login" className="text-emerald-600 hover:text-emerald-800 font-medium">
+            Đăng nhập
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };
