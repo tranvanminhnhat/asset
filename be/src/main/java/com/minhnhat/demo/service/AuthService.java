@@ -14,6 +14,7 @@ import com.minhnhat.demo.entity.UserEntity;
 import com.minhnhat.demo.repository.UserRepository;
 import com.minhnhat.demo.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,12 +24,12 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.minhnhat.demo.constant.MessageConstant.REGISTER_LOGIC_ERROR_001;
-import static com.minhnhat.demo.constant.MessageConstant.REGISTER_LOGIC_ERROR_002;
+import static com.minhnhat.demo.constant.MessageConstant.*;
 import static com.minhnhat.demo.dto.enums.VerificationStatus.VERIFIED;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
     private final UserRepository userRepository;
 
@@ -97,16 +98,19 @@ public class AuthService {
 
         // Check exist user by email
         if (userEntity == null) {
+            log.error("Login validation failed: user not found for email={}", request.getEmail());
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
 
         // Check password correctly
         if (!passwordEncoder.matches(request.getPassword(), userEntity.getPassword())) {
+            log.error("Login validation failed: invalid password for email={}", request.getEmail());
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
 
         // Check account status
         if (!VERIFIED.getCode().equals(userEntity.getStatus())) {
+            log.error("Login validation failed: account not verified for email={}", request.getEmail());
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
     }
@@ -156,15 +160,39 @@ public class AuthService {
 
     }
 
+    public void verifyEmail(String token) {
+        // Find user by token
+        UserEntity userEntity = userRepository.findFirstByToken(token).orElse(null);
+
+        if (userEntity == null) {
+            log.error("Verify email failed: invalid token={}", token);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_005), REGISTER_LOGIC_ERROR_005);
+        }
+
+        // Update status to VERIFIED and clear token
+        userEntity.setStatus(VerificationStatus.VERIFIED.getCode());
+        userEntity.setToken("");
+
+        try {
+            userRepository.save(userEntity);
+            log.info("User email verified successfully for email={}", userEntity.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to update user status during email verification for email={}", userEntity.getEmail(), e);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
+    }
+
     private void validateRequest(RegisterAccountRequest request) {
+        // Check if email already exists
+        if (userRepository.findFirstByEmail(request.getEmail()).isPresent()) {
+            log.error("Register validation failed: email already exists={}", request.getEmail());
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_003), REGISTER_LOGIC_ERROR_003);
+        }
 
-        // Check exist user by email
-        UserEntity userEntity = userRepository.findFirstByEmail(request.getEmail())
-                .orElseThrow(() -> new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001));
-
-        // Check password and confirm password is not match
+        // Check password and confirm password match
         if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new RuntimeException();
+            log.error("Register validation failed: password mismatch for email={}", request.getEmail());
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_004), REGISTER_LOGIC_ERROR_004);
         }
     }
 }

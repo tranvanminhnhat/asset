@@ -9,4 +9,8 @@ public class MessageConstant {
     public static final String LOGIN_INFO_001="login.info.001";
     public static final String REGISTER_LOGIC_ERROR_001 = "register.logic.error.001";
     public static final String REGISTER_LOGIC_ERROR_002 = "register.logic.error.002";
+    public static final String REGISTER_LOGIC_ERROR_003 = "register.logic.error.003"; // email already exists
+    public static final String REGISTER_LOGIC_ERROR_004 = "register.logic.error.004"; // password/confirm mismatch
+    public static final String REGISTER_LOGIC_ERROR_005 = "register.logic.error.005"; // invalid or expired token
+    public static final String REGISTER_INFO_002 = "register.info.002"; // verify success
 }
