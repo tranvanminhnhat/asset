@@ -1,7 +1,7 @@
 package com.minhnhat.demo.common.handler;
 
 import com.minhnhat.demo.common.exception.LogicException;
-import com.minhnhat.demo.common.response.ErrorResponse;
+import com.minhnhat.demo.common.base.response.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
