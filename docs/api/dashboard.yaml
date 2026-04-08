@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: Dashboard API
+  version: 1.0.0
+
+paths:
+  /api/v1/dashboard:
+    get:
+      summary: Get dashboard summary data
+      operationId: getDashboard
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Dashboard data fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+
+components:
+  schemas:
+    DashboardResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/DashboardData'
+        message:
+          $ref: '#/components/schemas/ResponseMessage'
+
+    DashboardData:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/DashboardSummary'
+        portfolios:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioItem'
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalCurrentValue:
+          type: number
+        totalPurchaseValue:
+          type: number
+        totalProfit:
+          type: number
+        profitPercentage:
+          type: number
+        currency:
+          type: string
+
+    PortfolioItem:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        type:
+          type: string
+        purchaseValue:
+          type: number
+        currentValue:
+          type: number
+        profit:
+          type: number
+        profitPercentage:
+          type: number
+        isProfit:
+          type: boolean
+
+    ResponseMessage:
+      type: object
+      properties:
+        code:
+          type: string
+        service:
+          type: string
+        message:
+          type: string

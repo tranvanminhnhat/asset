@@ -31,3 +31,8 @@ spring:
   messages:
     basename: messages
     encoding: UTF-8
+
+app:
+  frontend:
+    login-url: http://localhost:3000/login
+
