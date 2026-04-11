@@ -1,4 +1,4 @@
-import RegisterPage from '@/src/features/register/pages/RegisterPage';
+import RegisterPage from '@/features/register/pages/RegisterPage';
 import React from 'react';
 
 
