@@ -12,18 +12,18 @@ const HeroBanner: React.FC = () => {
           <h2 className="text-4xl font-bold text-emerald-950 mb-4">
             Nâng tầm đầu tư của bạn
           </h2>
-          <p className="text-slate-600 text-lg mb-6">
+          <p className="text-gray-600 text-l font-light leading-relaxed mb-6">
             Quản lý danh mục đầu tư một cách dễ dàng. Theo dõi hiệu suất, dự phòng và nâng cao trưởng tài sản trên một nền tảng sang trọng.
           </p>
           <button
-            onClick={() => router.push('/portfolio-selection')}
+            onClick={() => router.push('/investment-amount')}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition"
           >
             Bắt đầu ngay
           </button>
         </div>
         <div className="flex-1">
-          <div className="bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg p-8 h-64 flex items-center justify-center">
+          <div className="bg-linear-to-br from-slate-600 to-slate-800 rounded-lg p-8 h-64 flex items-center justify-center">
             <svg className="w-full h-full" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
               {/* Bar chart illustration */}
               <defs>

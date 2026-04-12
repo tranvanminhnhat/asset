@@ -12,9 +12,10 @@ const LoginForm: React.FC = () => {
 
   useEffect(() => {
     if (isSuccess) {
-      router.push('/dashboard');
+      // Use window.location for full page reload to ensure middleware checks cookies
+      window.location.href = '/dashboard';
     }
-  }, [isSuccess, router]);
+  }, [isSuccess]);
 
   const {
     register,

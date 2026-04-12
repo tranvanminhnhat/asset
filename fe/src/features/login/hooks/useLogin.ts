@@ -7,7 +7,9 @@ export const useLogin = () => {
 
   useEffect(() => {
     if (isSuccess && data) {
+      // Store token in both localStorage and cookies for compatibility
       localStorage.setItem('accessToken', data.data.accessToken);
+      document.cookie = `accessToken=${data.data.accessToken}; path=/; max-age=86400; samesite=lax`;
     }
   }, [isSuccess, data]);
 

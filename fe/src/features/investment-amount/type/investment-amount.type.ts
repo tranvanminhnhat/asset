@@ -1,4 +1,28 @@
 // Investment Amount Types
+export type InvestmentType = 'SAFE' | 'BALANCED' | 'GROWTH';
+
+export interface InvestmentAmountRequest {
+  amount: string;
+  type: InvestmentType;
+}
+
+export interface Allocation {
+  type: string;
+  amount: number;
+  percent: number;
+}
+
+export interface InvestmentAmountResponse {
+  data: {
+    allocations: Allocation[];
+  };
+  message: {
+    code: string;
+    message: string;
+    service: string;
+  };
+}
+
 export interface InvestmentGoal {
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   monthlyAmount: number;

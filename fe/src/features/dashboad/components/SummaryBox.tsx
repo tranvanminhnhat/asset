@@ -7,10 +7,11 @@ interface SummaryBoxProps {
 
 const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
   const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency === 'USD' ? 'USD' : 'VND',
-      minimumFractionDigits: 2,
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(value);
   };
 
@@ -18,42 +19,72 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
     return `${value.toFixed(2)}%`;
   };
 
+  const abbreviateNumber = (value: number) => {
+    if (value >= 1000000000) {
+      return `$${(value / 1000000000).toFixed(1)}B`;
+    } else if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(0)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(0)}K`;
+    }
+    return `$${value}`;
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+    <div className="mx-auto w-2/3 rounded-2xl bg-white p-6 mb-8 shadow-lg border border-gray-100">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-semibold text-slate-900">Tổng tài sản</h3>
-        <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-          Cập nhật
-        </span>
+        <h3 className="text-xl font-bold text-gray-900">Tổng tài sản</h3>
+        <button className="p-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition duration-200" title="Cập nhật">
+          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div>
-          <p className="text-sm text-slate-600 mb-2">Tổng giá trị</p>
-          <p className="text-3xl font-bold text-emerald-600">
-            {formatCurrency(summary.totalCurrentValue, summary.currency)}
+      {/* Main Total Value */}
+      <div className="text-center mb-8">
+        <p className="text-sm text-gray-500 mb-2">Tổng giá trị tài sản</p>
+        <p className="text-5xl font-bold text-gray-900 tracking-tight">
+          {abbreviateNumber(summary.totalCurrentValue)}
+        </p>
+        <p className="text-sm text-gray-400 mt-1">
+          {formatCurrency(summary.totalCurrentValue, summary.currency)}
+        </p>
+      </div>
+
+      {/* KPI Grid */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* Purchase Value */}
+        <div className="text-center p-4 bg-gray-50 rounded-xl">
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Giá mua</p>
+          <p className="text-lg font-semibold text-gray-900">
+            {abbreviateNumber(summary.totalPurchaseValue)}
           </p>
         </div>
-        <div>
-          <p className="text-sm text-slate-600 mb-2">Tổng giá mua</p>
-          <p className="text-3xl font-bold text-slate-800">
-            {formatCurrency(summary.totalPurchaseValue, summary.currency)}
+
+        {/* Profit Group */}
+        <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Lợi nhuận</p>
+          <p className={`text-lg font-semibold ${summary.totalProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+            {summary.totalProfit >= 0 ? '+' : ''}{abbreviateNumber(Math.abs(summary.totalProfit))}
+          </p>
+          <p className={`text-sm font-bold mt-1 ${summary.profitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {summary.profitPercentage >= 0 ? '+' : ''}{formatPercentage(summary.profitPercentage)}
           </p>
         </div>
-        <div>
-          <p className="text-sm text-slate-600 mb-2">Lãi suất lợi nhuận</p>
-          <div className="flex items-baseline gap-2">
-            <p className={`text-3xl font-bold ${summary.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {summary.totalProfit >= 0 ? '+' : ''}{formatCurrency(summary.totalProfit, summary.currency)}
-            </p>
-            <p className={`text-lg font-semibold ${summary.profitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {summary.profitPercentage >= 0 ? '+' : ''}{formatPercentage(summary.profitPercentage)}
-            </p>
-          </div>
+
+        {/* ROI */}
+        <div className="text-center p-4 bg-blue-50 rounded-xl">
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">ROI</p>
+          <p className={`text-lg font-semibold ${summary.profitPercentage >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+            {summary.profitPercentage >= 0 ? '+' : ''}{formatPercentage(summary.profitPercentage)}
+          </p>
         </div>
       </div>
 
-      <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 px-6 rounded-lg transition">
+      {/* CTA Button */}
+      <button className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-md hover:shadow-lg">
         Xem báo cáo chi tiết
       </button>
     </div>

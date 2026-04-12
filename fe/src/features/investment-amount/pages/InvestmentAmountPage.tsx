@@ -1,51 +1,28 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RiskOption from '../components/RiskOption';
+import { useInvestmentAmount } from '../hooks/useInvestmentAmount';
+import { InvestmentAmountRequest } from '../type/investment-amount.type';
 
 const InvestmentAmountPage: React.FC = () => {
   const router = useRouter();
-  const [riskLevel, setRiskLevel] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
-  const [monthlyAmount, setMonthlyAmount] = useState(500);
-  const [investmentPeriod, setInvestmentPeriod] = useState(150);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [amount, setAmount] = useState('');
+  const [type, setType] = useState<'SAFE' | 'BALANCED' | 'GROWTH'>('SAFE');
+  const { submitInvestmentAmount, isLoading } = useInvestmentAmount();
 
-  const getRiskReturns = (risk: string) => {
-    switch (risk) {
-      case 'LOW':
-        return { color: 'text-green-600', return: 8.11 };
-      case 'MEDIUM':
-        return { color: 'text-blue-600', return: 13.68 };
-      case 'HIGH':
-        return { color: 'text-orange-600', return: 53.47 };
-      default:
-        return { color: 'text-slate-600', return: 0 };
+  const handleContinue = async () => {
+    if (!amount) return;
+
+    const request: InvestmentAmountRequest = {
+      amount,
+      type,
+    };
+    const response = await submitInvestmentAmount(request);
+    if (response) {
+      localStorage.setItem('investmentAllocations', JSON.stringify({ allocations: response.data.allocations, type, amount: parseInt(amount) }));
+      router.push('/investment-recommendations');
     }
-  };
-
-  const calculateProjection = () => {
-    const returns = getRiskReturns(riskLevel).return / 100;
-    const totalInvested = monthlyAmount * investmentPeriod;
-    const projectedValue = totalInvested * (1 + returns);
-    return {
-      totalInvested,
-      projectedValue,
-      profit: projectedValue - totalInvested,
-    };
-  };
-
-  const projection = calculateProjection();
-
-  const handleContinue = () => {
-    const investmentData = {
-      riskLevel,
-      monthlyAmount,
-      investmentPeriod,
-      totalAmount: projection.totalInvested,
-      projectedValue: projection.projectedValue,
-    };
-    localStorage.setItem('investmentAmount', JSON.stringify(investmentData));
-    router.push('/investment-recommendations');
   };
 
   const scrollToResults = () => {
@@ -75,11 +52,11 @@ const InvestmentAmountPage: React.FC = () => {
             </button>
           </div>
           <div className="flex-1 hidden md:block">
-            <div className="w-full h-64 bg-gradient-to-br from-slate-300 to-slate-400 rounded-lg"></div>
+            <div className="w-full h-64 bg-linear-to-br from-slate-300 to-slate-400 rounded-lg"></div>
           </div>
         </div>
 
-        <div ref={containerRef} id="results-section" className="bg-slate-50 rounded-lg p-8 mb-8">
+        <div id="results-section" className="bg-slate-50 rounded-lg p-8 mb-8">
           {/* Risk Selection */}
           <div className="mb-10">
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Xác định hộ số tài chính của bạn</h2>
@@ -90,85 +67,45 @@ const InvestmentAmountPage: React.FC = () => {
               <RiskOption
                 label="An Toàn"
                 description="Bảo toàn vốn, tích lũy chậm chạp đơn giản từ đầu tư kho."
-                isSelected={riskLevel === 'LOW'}
-                onClick={() => setRiskLevel('LOW')}
+                isSelected={type === 'SAFE'}
+                onClick={() => setType('SAFE')}
               />
               <RiskOption
                 label="Cân Bằng"
-                description="Tăng trưởng cân bằng giữa đầu tư tổ chức và hạt nhân dài hạn."
-                isSelected={riskLevel === 'MEDIUM'}
-                onClick={() => setRiskLevel('MEDIUM')}
+                description="Tăng trưởng cân bằng giữa bảo toàn và gia tăng tài sản dài hạn."
+                isSelected={type === 'BALANCED'}
+                onClick={() => setType('BALANCED')}
               />
               <RiskOption
                 label="Tăng Trưởng"
-                description="Hướng tới lợi nhuận tối đa với rủi ro cao hơn trong đầu tư dài hạn."
-                isSelected={riskLevel === 'HIGH'}
-                onClick={() => setRiskLevel('HIGH')}
+                description="Hướng tới lợi nhuận cao hơn với chiến lược đầu tư tăng trưởng."
+                isSelected={type === 'GROWTH'}
+                onClick={() => setType('GROWTH')}
               />
             </div>
           </div>
 
           <hr className="my-8" />
 
-          {/* Monthly Investment */}
+          {/* Amount Input */}
           <div className="mb-8">
             <label className="block text-sm font-semibold text-slate-900 mb-3">
-              💰 Thử nhập dạng gần dây (mục/tháng)
+              💰 Nhập số tiền đầu tư
             </label>
             <div className="relative">
               <input
-                type="number"
-                value={monthlyAmount}
-                onChange={(e) => setMonthlyAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                type="text"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-semibold"
+                placeholder="Ví dụ: 10000000"
               />
               <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-600">₫</span>
             </div>
           </div>
 
-          {/* Investment Period */}
-          <div className="mb-8">
-            <label className="block text-sm font-semibold text-slate-900 mb-3">
-              ⏱️ Giai đoạn lập kế hoạch (tháng)
-            </label>
-            <input
-              type="number"
-              value={investmentPeriod}
-              onChange={(e) => setInvestmentPeriod(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-semibold"
-            />
-          </div>
-
           <hr className="my-8" />
 
-          {/* Projection Results */}
-          <div>
-            <h3 className="text-xl font-bold text-slate-900 mb-6">Lộ trình tài chính có nhân hóa</h3>
-            <p className="text-slate-600 mb-6">
-              Đây là các chi chi được dự kiến từ trên thông tin của bạn. Bạn có thể thay đổi các chi chi để nhìn.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-white p-6 rounded-lg border border-slate-200">
-                <p className="text-sm text-slate-600 mb-2">Tổng số tiền đầu tư</p>
-                <p className="text-2xl font-bold text-slate-900">
-                  {projection.totalInvested.toLocaleString('vi-VN')}₫
-                </p>
-              </div>
-              <div className="bg-white p-6 rounded-lg border border-slate-200">
-                <p className="text-sm text-slate-600 mb-2">Dự kiến giá trị</p>
-                <p className="text-2xl font-bold text-emerald-600">
-                  {projection.projectedValue.toLocaleString('vi-VN')}₫
-                </p>
-              </div>
-              <div className="bg-white p-6 rounded-lg border border-slate-200">
-                <p className="text-sm text-slate-600 mb-2">Lợi nhuận dự kiến</p>
-                <p className={`text-2xl font-bold ${getRiskReturns(riskLevel).color}`}>
-                  +{projection.profit.toLocaleString('vi-VN')}₫
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="flex gap-4 justify-between">
@@ -180,9 +117,10 @@ const InvestmentAmountPage: React.FC = () => {
           </button>
           <button
             onClick={handleContinue}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
+            disabled={isLoading || !amount}
+            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
           >
-            Tính toán kế hoạch tài chính →
+            {isLoading ? 'Đang xử lý...' : 'Tiếp tục →'}
           </button>
         </div>
       </div>

@@ -2,7 +2,6 @@
 import React from 'react';
 import { useDashboard } from '../hooks/useDashboard';
 import HeroBanner from '../components/HeroBanner';
-import DashboardSummary from '../components/DashboardSummary';
 import PortfolioList from '../components/PortfolioList';
 import SummaryBox from '../components/SummaryBox';
 

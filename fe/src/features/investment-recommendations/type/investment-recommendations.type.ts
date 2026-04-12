@@ -1,4 +1,12 @@
 // Investment Recommendations Types
+export { Allocation } from '../../investment-amount/type/investment-amount.type';
+
+export interface InvestmentData {
+  allocations: Allocation[];
+  type: string;
+  amount: number;
+}
+
 export interface FundAllocation {
   id: string;
   name: string;
