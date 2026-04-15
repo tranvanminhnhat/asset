@@ -1,10 +1,10 @@
-package com.minhnhat.demo.features.investmentAmount.service;
+package com.minhnhat.demo.features.investmentRecommendations.service;
 
 import com.minhnhat.demo.common.config.MessageService;
 import com.minhnhat.demo.common.exception.LogicException;
-import com.minhnhat.demo.features.investmentAmount.constant.InvestmentAmountConstant;
-import com.minhnhat.demo.features.investmentAmount.dto.request.InvestmentAmountRequest;
-import com.minhnhat.demo.features.investmentAmount.dto.response.InvestmentAmountResponse;
+import com.minhnhat.demo.features.investmentRecommendations.constant.InvestmentRecommendationsConstant;
+import com.minhnhat.demo.features.investmentRecommendations.dto.request.InvestmentRecommendationsRequest;
+import com.minhnhat.demo.features.investmentRecommendations.dto.response.InvestmentRecommendationsResponse;
 import com.minhnhat.demo.features.master.entity.InvestmentAllocationMasterEntity;
 import com.minhnhat.demo.features.master.repository.InvestmentAllocationMasterRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,39 +20,39 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class InvestmentAmountService {
+public class InvestmentRecommendationsService {
 
     private final InvestmentAllocationMasterRepository masterRepository;
 
     private final MessageService messageService;
 
-    private static final String SERVICE_NAME = "InvestmentAmountService";
+    private static final String SERVICE_NAME = "InvestmentRecommendationsService";
 
-    public InvestmentAmountResponse allocate(InvestmentAmountRequest request) {
+    public InvestmentRecommendationsResponse allocate(InvestmentRecommendationsRequest request) {
         validateRequest(request);
         Context ctx = loadData(request);
         executeBusinessLogic(ctx);
         return createResponse(ctx);
     }
 
-    private void validateRequest(InvestmentAmountRequest request) {
+    private void validateRequest(InvestmentRecommendationsRequest request) {
         if (request == null) {
             log.error("Allocation validation failed: request is null");
-            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001);
+            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
         }
 
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             log.error("Allocation validation failed: invalid amount={}", request.getAmount());
-            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001);
+            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
         }
 
         if (request.getType() == null || request.getType().trim().isEmpty()) {
             log.error("Allocation validation failed: type is empty");
-            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001);
+            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
         }
     }
 
-    private Context loadData(InvestmentAmountRequest request) {
+    private Context loadData(InvestmentRecommendationsRequest request) {
         String type = request.getType().trim();
         Context ctx = new Context();
         ctx.request = request;
@@ -72,8 +72,8 @@ public class InvestmentAmountService {
         }
 
         if (master == null) {
-            log.error("Allocation validation failed: master config not found for type={}", type);
-            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001);
+                log.error("Allocation validation failed: master config not found for type={}", type);
+                    throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
         }
 
         ctx.master = master;
@@ -91,7 +91,7 @@ public class InvestmentAmountService {
         BigDecimal sum = pEmergency.add(pGold).add(pEtf).add(pStock);
         if (sum.compareTo(BigDecimal.ZERO) == 0) {
             log.error("Master allocation percents sum to zero for type={}", ctx.code);
-            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentAmountConstant.ALLOCATE_LOGIC_ERROR_001);
+            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
         }
 
         // normalize if sum != 1
@@ -131,23 +131,23 @@ public class InvestmentAmountService {
         ctx.amountStock = amtStock;
     }
 
-    private InvestmentAmountResponse createResponse(Context ctx) {
-        List<InvestmentAmountResponse.Allocation> allocations = new ArrayList<>();
+    private InvestmentRecommendationsResponse createResponse(Context ctx) {
+        List<InvestmentRecommendationsResponse.Allocation> allocations = new ArrayList<>();
         // use 'type' field in response to map with DB keys for the allocation buckets
-        allocations.add(InvestmentAmountResponse.Allocation.builder().type("EMERGENCY").percent(strip(ctx.percentEmergency)).amount(strip(ctx.amountEmergency)).build());
-        allocations.add(InvestmentAmountResponse.Allocation.builder().type("GOLD").percent(strip(ctx.percentGold)).amount(strip(ctx.amountGold)).build());
-        allocations.add(InvestmentAmountResponse.Allocation.builder().type("ETF").percent(strip(ctx.percentEtf)).amount(strip(ctx.amountEtf)).build());
-        allocations.add(InvestmentAmountResponse.Allocation.builder().type("STOCK").percent(strip(ctx.percentStock)).amount(strip(ctx.amountStock)).build());
+        allocations.add(InvestmentRecommendationsResponse.Allocation.builder().type("EMERGENCY").percent(strip(ctx.percentEmergency)).amount(strip(ctx.amountEmergency)).build());
+        allocations.add(InvestmentRecommendationsResponse.Allocation.builder().type("GOLD").percent(strip(ctx.percentGold)).amount(strip(ctx.amountGold)).build());
+        allocations.add(InvestmentRecommendationsResponse.Allocation.builder().type("ETF").percent(strip(ctx.percentEtf)).amount(strip(ctx.amountEtf)).build());
+        allocations.add(InvestmentRecommendationsResponse.Allocation.builder().type("STOCK").percent(strip(ctx.percentStock)).amount(strip(ctx.amountStock)).build());
 
         log.info("Allocation computed from master type={} total={} => sumPercents={} sumAmounts={}", ctx.code, ctx.request.getAmount(), ctx.percentEmergency.add(ctx.percentGold).add(ctx.percentEtf).add(ctx.percentStock), ctx.amountEmergency.add(ctx.amountGold).add(ctx.amountEtf).add(ctx.amountStock));
 
-        return InvestmentAmountResponse.builder()
+        return InvestmentRecommendationsResponse.builder()
                 .allocations(allocations)
                 .build();
     }
 
     private static class Context {
-        InvestmentAmountRequest request;
+        InvestmentRecommendationsRequest request;
         String code;
         InvestmentAllocationMasterEntity master;
 
@@ -177,6 +177,8 @@ public class InvestmentAmountService {
         }
     }
 }
+
+
 
 
 

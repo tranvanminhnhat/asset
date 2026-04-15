@@ -1,4 +1,4 @@
-package com.minhnhat.demo.features.investmentAmount.dto.response;
+package com.minhnhat.demo.features.investmentRecommendations.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InvestmentAmountResponse {
+public class InvestmentRecommendationsResponse {
     private List<Allocation> allocations;
 
     // type of allocation (e.g. "EMERGENCY", "GOLD", "ETF", "STOCK") - maps to DB keys
@@ -30,4 +30,5 @@ public class InvestmentAmountResponse {
         private BigDecimal percent;
     }
 }
+
 

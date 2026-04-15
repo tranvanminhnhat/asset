@@ -1,4 +1,4 @@
-package com.minhnhat.demo.features.investmentAmount.dto.request;
+package com.minhnhat.demo.features.investmentComplete.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,12 +11,13 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InvestmentAmountRequest {
+public class InvestmentCompleteRequest {
     // total investment amount
     private BigDecimal amount;
 
     // allocation type/risk profile: will be matched against master table (e.g., SAFE, BALANCED, GROWTH)
     private String type;
 }
+
 
 
