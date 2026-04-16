@@ -57,27 +57,6 @@ const InvestmentRecommendationsPage: React.FC = () => {
               <FundCard key={fund.id} fund={fund} />
             ))}
           </div>
-          <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition">
-            Chọn Mã Cổ Phiếu
-          </button>
-        </div>
-
-        <hr className="my-12" />
-
-        {/* Stock Recommendations Section */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-slate-900 mb-3">Quản lý Quỹ Cổ Phiếu của bạn</h2>
-          <p className="text-slate-600 mb-6">
-            Quỹ cổ phiếu của bạn dòng giải các cổ phiếu lựa chọn sẽ sông doanh mục đầu tư. Việc lựa chọn các cổ phiếu phù hợp chính là yếu tố hàng đầu để giúp bạn đạt được mục tiêu tài chính của bạn.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {/* MOCK_STOCKS.map((stock) => (
-              <StockRecommendationCard key={stock.id} stock={stock} />
-            )) */}
-          </div>
-          <button className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition">
-            Chọn Mã Cổ Phiếu →
-          </button>
         </div>
 
         {/* Summary Section */}
