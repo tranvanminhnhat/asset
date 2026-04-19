@@ -1,0 +1,36 @@
+package com.minhnhat.demo.features.master.entity;
+
+import com.minhnhat.demo.common.base.entity.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "allocation_strategy_details")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AllocationStrategyDetailEntity extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "strategy_id", nullable = false)
+    private Long strategyId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "strategy_id", nullable = false, insertable = false, updatable = false)
+    private AllocationStrategyEntity strategy;
+
+    @Column(name = "asset_type", length = 50, nullable = false)
+    private String assetType;
+
+    @Column(name = "percentage", precision = 5, scale = 2, nullable = false)
+    private BigDecimal percentage;
+}
+

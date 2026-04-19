@@ -15,21 +15,12 @@ import java.util.List;
 @AllArgsConstructor
 public class InvestmentCompleteResponse {
     private String sessionId;
-
     private Long planId;
-
     private String userId;
-
     private String type;
-
     private BigDecimal totalAmount;
-
     private String status;
-
     private String recommendationSnapshot;
-
-    private String note;
-
     private LocalDateTime createdAt;
 
     private List<Allocation> allocations;

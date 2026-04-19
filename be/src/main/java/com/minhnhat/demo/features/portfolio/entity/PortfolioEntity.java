@@ -1,16 +1,16 @@
 package com.minhnhat.demo.features.portfolio.entity;
 
 import com.minhnhat.demo.common.base.entity.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.minhnhat.demo.features.auth.entity.UserEntity;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "PORTFOLIO")
+@Table(name = "portfolio", indexes = {
+        @Index(name = "uk_user_asset", columnList = "user_id,asset_type", unique = true)
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,22 +19,24 @@ import java.math.BigDecimal;
 public class PortfolioEntity extends BaseEntity {
 
     @Id
-    @Column(name = "ID", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "USER_ID", nullable = false)
-    private Long userId;
+    @Column(name = "user_id", nullable = false, updatable = false, length = 36)
+    private String userId;
 
-    @Column(name = "NAME", nullable = false)
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false, insertable = false)
+    private UserEntity user;
 
-    @Column(name = "TYPE", nullable = false)
-    private String type;
+    @Column(name = "asset_type", nullable = false, length = 50)
+    private String assetType;
 
-    @Column(name = "PURCHASE_VALUE", nullable = false)
-    private BigDecimal purchaseValue;
+    @Column(name = "quantity", nullable = false, precision = 19, scale = 6)
+    private BigDecimal quantity;
 
-    @Column(name = "CURRENT_VALUE", nullable = false)
-    private BigDecimal currentValue;
+    @Column(name = "total_invested", nullable = false, precision = 19, scale = 2)
+    private BigDecimal totalInvested;
 }
 

@@ -29,7 +29,7 @@ export const useInvestmentRecommendations = () => {
   const getInitialData = () => {
     if (typeof window !== 'undefined') {
       const storedData = localStorage.getItem('investmentAllocations');
-      return storedData ? JSON.parse(storedData) : null;
+      return storedData ? (JSON.parse(storedData) as InvestmentData) : null;
     }
     return null;
   };
@@ -50,9 +50,13 @@ export const useInvestmentRecommendations = () => {
     };
 
     const response = await completeInvestment(request).unwrap();
-    localStorage.setItem(INVESTMENT_COMPLETE_STORAGE_KEY, JSON.stringify(response));
+    const payload = getCompletePayload(response);
 
-    return getCompletePayload(response);
+    if (payload) {
+      localStorage.setItem(INVESTMENT_COMPLETE_STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    return payload;
   };
 
   return {

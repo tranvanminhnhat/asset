@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatCurrency, formatDateTime } from '@/lib/formatters';
 import {
   InvestmentCompleteApiResponse,
   InvestmentCompleteResponse,
@@ -47,26 +48,6 @@ const InvestmentCompletePage: React.FC = () => {
       return null;
     }
   }, []);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatDateTime = (value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-
-    return new Intl.DateTimeFormat('vi-VN', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(date);
-  };
 
   if (!data) {
     return (

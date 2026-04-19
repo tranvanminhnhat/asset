@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "USER")
+@Table(name = "user")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,18 +14,21 @@ import lombok.*;
 public class UserEntity extends BaseEntity {
 
     @Id
-    @Column(name = "USER_ID", length = 36, nullable = false, updatable = false)
+    @Column(name = "user_id", length = 36, nullable = false, updatable = false)
     private String userId;
 
-    @Column(name = "EMAIL", nullable = false, unique = true, length = 255)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "PASSWORD", nullable = false, length = 255)
+    @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "STATUS", nullable = false)
+    @Column(name = "is_verified", nullable = true)
+    private Boolean isVerified;
+
+    @Column(name = "status", nullable = false, length = 30)
     private String status;
 
-    @Column(name = "TOKEN", nullable = false)
+    @Column(name = "token", length = 45)
     private String token;
 }

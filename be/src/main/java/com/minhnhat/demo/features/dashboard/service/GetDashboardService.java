@@ -5,6 +5,7 @@ import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
 import com.minhnhat.demo.features.portfolio.entity.PortfolioEntity;
 import com.minhnhat.demo.features.portfolio.repository.PortfolioRepository;
+import com.minhnhat.demo.features.portfolio.repository.PortfolioTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,26 +19,23 @@ import java.util.List;
 public class GetDashboardService {
 
     private final PortfolioRepository portfolioRepository;
-
+    private final PortfolioTransactionRepository transactionRepository;
     private final SecurityUtils currentUserService;
 
     public DashboardResponse getDashboard() {
-
-        List<PortfolioEntity> portfolioEntity = loadData();
-
-        return createResponse(portfolioEntity);
+        List<PortfolioEntity> portfolioEntities = loadData();
+        return createResponse(portfolioEntities);
     }
 
-    private List<PortfolioEntity> loadData(){
-//        CurrentUserInfo currentUser = currentUserService.getCurrentUser();
-        return portfolioRepository.findByUserId("1");
+    private List<PortfolioEntity> loadData() {
+        CurrentUserInfo currentUser = currentUserService.getCurrentUser();
+        return portfolioRepository.findByUserId(currentUser.getUserId());
     }
 
-    private DashboardResponse createResponse(List<PortfolioEntity> portfolioEntities){
+    private DashboardResponse createResponse(List<PortfolioEntity> portfolioEntities) {
         if (portfolioEntities == null || portfolioEntities.isEmpty()) {
-            assert portfolioEntities != null;
             return DashboardResponse.builder()
-                    .summary(createSummary(portfolioEntities))
+                    .summary(createEmptySummary())
                     .portfolios(List.of())
                     .build();
         }
@@ -50,38 +48,37 @@ public class GetDashboardService {
     private List<DashboardResponse.PortfolioItem> createPortfolios(List<PortfolioEntity> portfolioEntities) {
         return portfolioEntities.stream()
                 .map(entity -> DashboardResponse.PortfolioItem.builder()
-                        .id(entity.getId())
-                        .name(entity.getName())
-                        .type(entity.getType())
-                        .purchaseValue(entity.getPurchaseValue())
-                        .currentValue(entity.getCurrentValue())
-                        .profit(entity.getCurrentValue().subtract(entity.getPurchaseValue()))
-                        .isProfit(entity.getCurrentValue().compareTo(entity.getPurchaseValue()) > 0)
+                        .portfolioId(entity.getId())
+                        .assetType(entity.getAssetType())
+                        .quantity(entity.getQuantity())
+                        .totalInvested(entity.getTotalInvested())
+                        .createdAt(entity.getCreatedAt())
+                        .updatedAt(entity.getUpdatedAt())
                         .build())
                 .toList();
     }
 
-    private DashboardResponse.Summary createSummary(List<PortfolioEntity> portfolioEntities){
-
-        BigDecimal totalCurrentValue = portfolioEntities.stream()
-                .map(PortfolioEntity::getCurrentValue)
+    private DashboardResponse.Summary createSummary(List<PortfolioEntity> portfolioEntities) {
+        BigDecimal totalInvested = portfolioEntities.stream()
+                .map(PortfolioEntity::getTotalInvested)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalPurchaseValue = portfolioEntities.stream()
-                .map(PortfolioEntity::getPurchaseValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalProfit = totalCurrentValue.subtract(totalPurchaseValue);
-
-        BigDecimal profitPercentage = totalPurchaseValue.compareTo(BigDecimal.ZERO) > 0
-                ? totalProfit.divide(totalPurchaseValue, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100))
-                : BigDecimal.ZERO;
+        long totalAssetTypes = portfolioEntities.size();
+        long totalTransactions = transactionRepository.findAll().size();
 
         return DashboardResponse.Summary.builder()
-                .totalCurrentValue(totalCurrentValue)
-                .totalPurchaseValue(totalPurchaseValue)
-                .totalProfit(totalProfit)
-                .profitPercentage(profitPercentage)
+                .totalInvested(totalInvested)
+                .totalAssetTypes(totalAssetTypes)
+                .totalTransactions(totalTransactions)
+                .currency("USD")
+                .build();
+    }
+
+    private DashboardResponse.Summary createEmptySummary() {
+        return DashboardResponse.Summary.builder()
+                .totalInvested(BigDecimal.ZERO)
+                .totalAssetTypes(0L)
+                .totalTransactions(0L)
                 .currency("USD")
                 .build();
     }

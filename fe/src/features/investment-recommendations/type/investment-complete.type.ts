@@ -13,7 +13,7 @@ export interface InvestmentCompleteRequest {
 export interface InvestmentCompleteResponse {
   sessionId: string;
   planId: number;
-  userId: number;
+  userId: string;
   type: string;
   totalAmount: number;
   status: string;

@@ -13,6 +13,7 @@ import com.minhnhat.demo.features.auth.dto.response.LogoutResponse;
 import com.minhnhat.demo.features.auth.dto.response.RegisterAccountResponse;
 import com.minhnhat.demo.features.auth.entity.UserEntity;
 import com.minhnhat.demo.features.auth.repository.UserRepository;
+import com.minhnhat.demo.features.auth.service.UserPrincipal;
 import com.minhnhat.demo.common.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,10 +65,25 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        // Get user entity
-        UserEntity userEntity = userRepository.findFirstByEmail(request.getEmail()).orElse(null);
-
         // Validate request
+        if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            log.error("Login validation failed: email is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            log.error("Login validation failed: password is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        // Get user entity
+        UserEntity userEntity = userRepository.findFirstByEmail(request.getEmail())
+                .orElseThrow(() -> {
+                    log.error("Login validation failed: user not found for email={}", request.getEmail());
+                    return new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+                });
+
+        // Validate login request
         validateLoginRequest(request, userEntity);
 
         // Create User Principal
@@ -184,6 +200,30 @@ public class AuthService {
     }
 
     private void validateRequest(RegisterAccountRequest request) {
+        // Validate request is not null
+        if (request == null) {
+            log.error("Register validation failed: request is null");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
+
+        // Validate email is not empty
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            log.error("Register validation failed: email is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
+
+        // Validate password is not empty
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            log.error("Register validation failed: password is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
+
+        // Validate confirm password is not empty
+        if (request.getConfirmPassword() == null || request.getConfirmPassword().trim().isEmpty()) {
+            log.error("Register validation failed: confirmPassword is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
+
         // Check if email already exists
         if (userRepository.findFirstByEmail(request.getEmail()).isPresent()) {
             log.error("Register validation failed: email already exists={}", request.getEmail());

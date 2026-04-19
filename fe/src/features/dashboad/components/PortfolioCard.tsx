@@ -1,28 +1,16 @@
 import React from 'react';
-import { Portfolio } from '../type/dashboard.type';
+import { formatCurrency, formatPercentage } from '@/lib/formatters';
+import { DashboardPortfolioItem } from '../type/dashboard.type';
 
 interface PortfolioCardProps {
-  portfolio: Portfolio;
+  portfolio: DashboardPortfolioItem;
 }
 
 const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatPercentage = (value: number | null) => {
-    if (value === null) return '0.00%';
-    return `${value.toFixed(2)}%`;
-  };
-
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'CRYPTO':
-        return 'Quỹ khấn cấp';
+      case 'EMERGENCY':
+        return 'Quỹ khẩn cấp';
       case 'STOCK':
         return 'Cổ phiếu';
       case 'GOLD':
@@ -36,8 +24,8 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'CRYPTO':
-        return '💰';
+      case 'EMERGENCY':
+        return '🛟';
       case 'STOCK':
         return '📈';
       case 'GOLD':
@@ -56,15 +44,22 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
         <span className="flex h-8 w-8 items-center justify-center rounded border border-blue-400 bg-blue-50 text-lg">
           {getTypeIcon(portfolio.type)}
         </span>
-        <h3 className="text-base font-semibold text-slate-900 truncate" title={getTypeLabel(portfolio.type)}>
-          {getTypeLabel(portfolio.type)}
-        </h3>
+        <div>
+          <h3 className="text-base font-semibold text-slate-900 truncate" title={getTypeLabel(portfolio.type)}>
+            {getTypeLabel(portfolio.type)}
+          </h3>
+          <p className="text-xs text-slate-500">{portfolio.name}</p>
+        </div>
       </div>
 
       {/* Price info */}
       <div className="mb-4 space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-600">Giá mua</span>
+          <span className="text-sm text-slate-600">Mã danh mục</span>
+          <span className="text-sm font-semibold text-slate-900">#{portfolio.id}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-slate-600">Tổng vốn</span>
           <span className="text-sm font-semibold text-slate-900 truncate" title={formatCurrency(portfolio.purchaseValue)}>
             {formatCurrency(portfolio.purchaseValue)}
           </span>
@@ -75,6 +70,12 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
             {formatCurrency(portfolio.currentValue)}
           </span>
         </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-slate-600">Tên danh mục</span>
+          <span className="text-sm font-semibold text-slate-900 truncate" title={portfolio.name}>
+            {portfolio.name}
+          </span>
+        </div>
       </div>
 
       {/* Divider */}
@@ -83,8 +84,8 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
       {/* Profit section */}
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <span className="text-sm text-slate-600">Lợi nhuận</span>
-          <p className={`text-sm font-semibold ${portfolio.isProfit ? 'text-slate-900' : 'text-slate-900'}`}>
+          <span className="text-sm text-slate-600">PnL</span>
+          <p className={`text-sm font-semibold ${portfolio.isProfit ? 'text-emerald-700' : 'text-red-700'}`}>
             {portfolio.isProfit ? '+' : ''}{formatCurrency(portfolio.profit)}
           </p>
         </div>
@@ -92,11 +93,6 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
           {portfolio.isProfit ? '+' : ''}{formatPercentage(portfolio.profitPercentage)}
         </span>
       </div>
-
-      {/* Button */}
-      <button className="w-full rounded border border-slate-300 bg-white py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-        Xem chi tiết
-      </button>
     </div>
   );
 };

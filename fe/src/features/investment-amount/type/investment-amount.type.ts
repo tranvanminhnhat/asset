@@ -2,7 +2,7 @@
 export type InvestmentType = 'SAFE' | 'BALANCED' | 'GROWTH';
 
 export interface InvestmentAmountRequest {
-  amount: string;
+  amount: number;
   type: InvestmentType;
 }
 
@@ -13,14 +13,16 @@ export interface Allocation {
 }
 
 export interface InvestmentAmountResponse {
-  data: {
-    allocations: Allocation[];
-  };
+  data: RecommendationResponse;
   message: {
     code: string;
     message: string;
     service: string;
   };
+}
+
+export interface RecommendationResponse {
+  allocations: Allocation[];
 }
 
 export interface InvestmentGoal {

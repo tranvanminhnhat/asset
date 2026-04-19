@@ -1,5 +1,7 @@
 // Investment Recommendations Types
-export { Allocation } from '../../investment-amount/type/investment-amount.type';
+import { Allocation } from '../../investment-amount/type/investment-amount.type';
+
+export type { Allocation } from '../../investment-amount/type/investment-amount.type';
 
 export interface InvestmentData {
   allocations: Allocation[];

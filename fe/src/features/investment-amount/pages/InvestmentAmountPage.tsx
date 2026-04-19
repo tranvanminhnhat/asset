@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/formatters';
 import RiskOption from '../components/RiskOption';
 import { useInvestmentAmount } from '../hooks/useInvestmentAmount';
 import LogoutButton from '@/features/logout/components/LogoutButton';
@@ -10,18 +11,26 @@ const InvestmentAmountPage: React.FC = () => {
   const router = useRouter();
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<'SAFE' | 'BALANCED' | 'GROWTH'>('SAFE');
-  const { submitInvestmentAmount, isLoading } = useInvestmentAmount();
+  const { submitInvestmentAmount, isLoading, error } = useInvestmentAmount();
 
   const handleContinue = async () => {
-    if (!amount) return;
+    const normalizedAmount = Number(amount.replace(/[^\d.]/g, ''));
+
+    if (!normalizedAmount) {
+      return;
+    }
 
     const request: InvestmentAmountRequest = {
-      amount,
+      amount: normalizedAmount,
       type,
     };
     const response = await submitInvestmentAmount(request);
     if (response) {
-      localStorage.setItem('investmentAllocations', JSON.stringify({ allocations: response.data.allocations, type, amount: parseInt(amount) }));
+      localStorage.setItem('investmentAllocations', JSON.stringify({
+        allocations: response.allocations,
+        type,
+        amount: normalizedAmount,
+      }));
       router.push('/investment-recommendations');
     }
   };
@@ -99,16 +108,28 @@ const InvestmentAmountPage: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
+                inputMode="numeric"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-semibold"
                 placeholder="Ví dụ: 10000000"
               />
               <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-600">₫</span>
+              {amount && !Number.isNaN(Number(amount.replace(/[^\d.]/g, ''))) && (
+                <p className="mt-3 text-sm text-slate-600">
+                  Số tiền dự kiến: {formatCurrency(Number(amount.replace(/[^\d.]/g, '')))}
+                </p>
+              )}
             </div>
           </div>
 
           <hr className="my-8" />
+
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
         </div>
 

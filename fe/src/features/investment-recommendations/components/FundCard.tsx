@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency } from '@/lib/formatters';
 import { FundAllocation } from '../type/investment-recommendations.type';
 
 interface FundCardProps {
@@ -6,18 +7,10 @@ interface FundCardProps {
 }
 
 const FundCard: React.FC<FundCardProps> = ({ fund }) => {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
   const getIconForType = (type: string) => {
     switch (type) {
-      case 'CRYPTO':
-        return '💰';
+      case 'EMERGENCY':
+        return '🛟';
       case 'GOLD':
         return '🏆';
       case 'ETF':

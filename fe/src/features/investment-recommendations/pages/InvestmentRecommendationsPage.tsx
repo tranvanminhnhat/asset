@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/formatters';
 import FundCard from '../components/FundCard';
 import LogoutButton from '@/features/logout/components/LogoutButton';
 import { useInvestmentRecommendations } from '../hooks/useInvestmentRecommendations';
@@ -11,8 +12,27 @@ const InvestmentRecommendationsPage: React.FC = () => {
   const router = useRouter();
   const { data, isLoading, isSubmitting, isError, submitInvestmentComplete } = useInvestmentRecommendations();
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-white px-4 py-10">
+        <div className="mx-auto max-w-3xl rounded-lg border border-slate-200 bg-slate-50 p-8">
+          <h1 className="mb-3 text-2xl font-bold text-slate-900">Chưa có dữ liệu đề xuất</h1>
+          <p className="mb-6 text-slate-600">
+            Vui lòng quay lại bước nhập số tiền để gọi API recommend và lấy phân bổ đầu tư.
+          </p>
+          <button
+            onClick={() => router.push('/investment-amount')}
+            className="rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Quay lại nhập thông tin
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const funds = mapAllocationsToFunds(data.allocations);
@@ -24,14 +44,6 @@ const InvestmentRecommendationsPage: React.FC = () => {
     currency: 'VND',
     funds,
     investmentStrategy: data.type,
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(value);
   };
 
   const handleCompleteInvestment = async () => {
@@ -55,7 +67,7 @@ const InvestmentRecommendationsPage: React.FC = () => {
           <div>
             <p className="text-lg text-slate-600 mb-2">{portfolio.description}</p>
             <p className="text-slate-600 leading-relaxed">
-              Đây là đề xuất dựa trên hồ sơ rủi ro của bạn, được chứa đó là cung cấp cho bạn một cấu trúc tài chính rõ ràng, đa dạng hóa, và phù hợp với mục tiêu đầu tư dài hạn của bạn.
+              Đây là đề xuất dựa trên hồ sơ rủi ro của bạn, cung cấp một cấu trúc tài chính rõ ràng, đa dạng hóa và phù hợp với mục tiêu đầu tư dài hạn.
             </p>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency, formatPercentage } from '@/lib/formatters';
 import { DashboardSummary } from '../type/dashboard.type';
 
 interface SummaryBoxProps {
@@ -6,30 +7,6 @@ interface SummaryBoxProps {
 }
 
 const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
-  const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(2)}%`;
-  };
-
-  const abbreviateNumber = (value: number) => {
-    if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(1)}B`;
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(0)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
-    }
-    return `$${value}`;
-  };
-
   return (
     <div className="mx-auto w-2/3 rounded-2xl bg-white p-6 mb-8 shadow-lg border border-gray-100">
       {/* Header */}
@@ -46,9 +23,6 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
       <div className="text-center mb-8">
         <p className="text-sm text-gray-500 mb-2">Tổng giá trị tài sản</p>
         <p className="text-5xl font-bold text-gray-900 tracking-tight">
-          {abbreviateNumber(summary.totalCurrentValue)}
-        </p>
-        <p className="text-sm text-gray-400 mt-1">
           {formatCurrency(summary.totalCurrentValue, summary.currency)}
         </p>
       </div>
@@ -59,7 +33,7 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
         <div className="text-center p-4 bg-gray-50 rounded-xl">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Giá mua</p>
           <p className="text-lg font-semibold text-gray-900">
-            {abbreviateNumber(summary.totalPurchaseValue)}
+            {formatCurrency(summary.totalPurchaseValue, summary.currency)}
           </p>
         </div>
 
@@ -67,7 +41,7 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
         <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Lợi nhuận</p>
           <p className={`text-lg font-semibold ${summary.totalProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-            {summary.totalProfit >= 0 ? '+' : ''}{abbreviateNumber(Math.abs(summary.totalProfit))}
+            {summary.totalProfit >= 0 ? '+' : ''}{formatCurrency(Math.abs(summary.totalProfit), summary.currency)}
           </p>
           <p className={`text-sm font-bold mt-1 ${summary.profitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {summary.profitPercentage >= 0 ? '+' : ''}{formatPercentage(summary.profitPercentage)}
@@ -84,6 +58,15 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
       </div>
 
       {/* CTA Button */}
+      <div className="mb-4 flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-slate-600">
+        <span className="rounded-full bg-slate-100 px-3 py-1">
+          Loại tài sản: {summary.totalAssetTypes ?? 0}
+        </span>
+        <span className="rounded-full bg-slate-100 px-3 py-1">
+          Tổng giao dịch: {summary.totalTransactions ?? 0}
+        </span>
+      </div>
+
       <button className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-md hover:shadow-lg">
         Xem báo cáo chi tiết
       </button>

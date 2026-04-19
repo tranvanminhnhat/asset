@@ -16,7 +16,10 @@ public class InvestmentCompleteRequest {
     // total investment amount
     private BigDecimal amount;
 
-    // allocation type/risk profile: will be matched against master table (e.g., SAFE, BALANCED, GROWTH)
+    // allocation strategy ID
+    private Long strategyId;
+
+    // allocation type/risk profile (e.g., SAFE, BALANCED, GROWTH)
     private String type;
 
     // list of allocations that can be edited by user

@@ -1,28 +1,32 @@
-import { useState } from 'react';
-import { callInvestmentAmountApi } from '../services/investment-amount.api';
-import { InvestmentAmountRequest, InvestmentAmountResponse } from '../type/investment-amount.type';
+import { useGetRecommendationMutation } from '../services/investment-amount.api';
+import {
+  InvestmentAmountRequest,
+  InvestmentAmountResponse,
+  RecommendationResponse,
+} from '../type/investment-amount.type';
+
+const getRecommendationPayload = (
+  response: InvestmentAmountResponse | RecommendationResponse,
+): RecommendationResponse | null => {
+  if ('data' in response) {
+    return response.data;
+  }
+
+  return response;
+};
 
 export const useInvestmentAmount = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [getRecommendation, { isLoading, error }] = useGetRecommendationMutation();
 
-  const submitInvestmentAmount = async (request: InvestmentAmountRequest): Promise<InvestmentAmountResponse | null> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await callInvestmentAmountApi(request);
-      return response;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+  const submitInvestmentAmount = async (request: InvestmentAmountRequest): Promise<RecommendationResponse | null> => {
+    const response = await getRecommendation(request).unwrap();
+
+    return getRecommendationPayload(response);
   };
 
   return {
     submitInvestmentAmount,
     isLoading,
-    error,
+    error: error ? 'Không thể lấy đề xuất đầu tư.' : null,
   };
 };

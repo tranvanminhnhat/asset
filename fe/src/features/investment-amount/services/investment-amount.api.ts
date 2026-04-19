@@ -1,19 +1,16 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { baseApi } from '@/store/api/baseApi';
+import { InvestmentAmountRequest, InvestmentAmountResponse, RecommendationResponse } from '../type/investment-amount.type';
 
-import { InvestmentAmountRequest, InvestmentAmountResponse } from '../type/investment-amount.type';
+export const investmentAmountApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    getRecommendation: builder.mutation<InvestmentAmountResponse | RecommendationResponse, InvestmentAmountRequest>({
+      query: (body) => ({
+        url: '/investment-amount',
+        method: 'POST',
+        body,
+      }),
+    }),
+  }),
+});
 
-export const callInvestmentAmountApi = async (request: InvestmentAmountRequest): Promise<InvestmentAmountResponse> => {
-  const response = await fetch(`${API_BASE_URL}/investment-amount`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch investment amount');
-  }
-
-  return response.json();
-};
+export const { useGetRecommendationMutation } = investmentAmountApi;

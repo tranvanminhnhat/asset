@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCurrency, formatPercentage } from '@/lib/formatters';
 import { DashboardSummary } from '../type/dashboard.type';
 
 interface DashboardSummaryProps {
@@ -6,18 +7,6 @@ interface DashboardSummaryProps {
 }
 
 const DashboardSummaryComponent: React.FC<DashboardSummaryProps> = ({ summary }) => {
-  const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: currency === 'USD' ? 'USD' : 'VND',
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(2)}%`;
-  };
-
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-8">
       <h2 className="text-2xl font-semibold text-emerald-950 mb-6">Tổng quan</h2>
