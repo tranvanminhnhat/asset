@@ -1,8 +1,27 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Temporarily disabled - using client-side auth check instead
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get('accessToken')?.value;
+  const isLoggedOut = request.cookies.get('isLoggedOut')?.value === '1';
+  const isAuthenticated = Boolean(token) && !isLoggedOut;
+
+  const publicRoutes = ['/login', '/register'];
+  const isPublicRoute = publicRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+
+  if (!isAuthenticated && !isPublicRoute) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthenticated && isPublicRoute) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   return NextResponse.next();
 }
 

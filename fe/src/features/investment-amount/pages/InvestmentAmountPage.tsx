@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RiskOption from '../components/RiskOption';
 import { useInvestmentAmount } from '../hooks/useInvestmentAmount';
+import LogoutButton from '@/features/logout/components/LogoutButton';
 import { InvestmentAmountRequest } from '../type/investment-amount.type';
 
 const InvestmentAmountPage: React.FC = () => {
@@ -35,6 +36,9 @@ const InvestmentAmountPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white px-4 py-10">
       <div className="max-w-4xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <LogoutButton />
+        </div>
         {/* Hero Section */}
         <div className="mb-16 flex flex-col md:flex-row gap-8 items-center">
           <div className="flex-1">

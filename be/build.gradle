@@ -36,6 +36,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	// Explicit Jackson databind (in case it's not transitively available)
 	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+	// Java time module for Jackson (to properly handle java.time types)
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
 	// Mail
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	// Thymeleaf

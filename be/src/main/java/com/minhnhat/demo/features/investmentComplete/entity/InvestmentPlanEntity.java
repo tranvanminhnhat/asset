@@ -19,7 +19,7 @@ public class InvestmentPlanEntity extends BaseEntity {
     private Long id;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private String userId;
 
     @Column(name = "total_amount", precision = 18, scale = 2, nullable = false)
     private BigDecimal totalAmount;
@@ -34,10 +34,10 @@ public class InvestmentPlanEntity extends BaseEntity {
     private String note;
 
     @Column(name = "created_by")
-    private Long createdBy;
+    private String createdBy;
 
     @Column(name = "updated_by")
-    private Long updatedBy;
+    private String updatedBy;
 
     // allocations are stored in separate table `investment_plan_allocation` and linked by plan_id (no JPA relationship configured)
 }

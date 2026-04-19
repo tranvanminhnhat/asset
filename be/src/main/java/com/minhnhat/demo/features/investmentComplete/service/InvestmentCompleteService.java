@@ -3,27 +3,24 @@ package com.minhnhat.demo.features.investmentComplete.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.minhnhat.demo.common.security.SecurityUtils;
+import com.minhnhat.demo.features.investmentComplete.dto.request.InvestmentCompleteRequest;
 import com.minhnhat.demo.features.investmentComplete.dto.response.InvestmentCompleteResponse;
 import com.minhnhat.demo.features.investmentComplete.entity.InvestmentPlanAllocationEntity;
 import com.minhnhat.demo.features.investmentComplete.entity.InvestmentPlanEntity;
 import com.minhnhat.demo.features.investmentComplete.repository.InvestmentPlanAllocationRepository;
 import com.minhnhat.demo.features.investmentComplete.repository.InvestmentPlanRepository;
-import com.minhnhat.demo.features.investmentRecommendations.dto.request.InvestmentRecommendationsRequest;
-import com.minhnhat.demo.features.investmentRecommendations.service.InvestmentRecommendationsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InvestmentCompleteService {
-
-    private final InvestmentRecommendationsService recommendationsService;
 
     private final InvestmentPlanRepository planRepository;
 
@@ -33,18 +30,16 @@ public class InvestmentCompleteService {
 
     private final ObjectMapper objectMapper;
 
-    public InvestmentCompleteResponse createSession(final InvestmentRecommendationsRequest request) {
-        var rec = recommendationsService.allocate(request);
-
+    public InvestmentCompleteResponse createSession(final InvestmentCompleteRequest request) {
         // current user
-        Long userId = null;
+        String userId = null;
         try {
             var cu = securityUtils.getCurrentUser();
-            if (cu != null && cu.getUserId() != null) {
-                userId = Long.parseLong(cu.getUserId());
+            if (cu != null) {
+                userId = cu.getUserId();
             }
-        } catch (Exception ignored) {
-            // keep userId null if parsing fails
+        } catch (Exception e) {
+            throw new RuntimeException("User must be authenticated to create investment plan", e);
         }
 
         InvestmentPlanEntity plan = new InvestmentPlanEntity();
@@ -55,16 +50,23 @@ public class InvestmentCompleteService {
         plan.setUpdatedBy(userId);
 
         try {
-            plan.setRecommendationSnapshot(objectMapper.writeValueAsString(rec));
+            plan.setRecommendationSnapshot(objectMapper.writeValueAsString(request.getAllocations()));
         } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize allocations to JSON", e);
             plan.setRecommendationSnapshot(null);
         }
 
-        plan = planRepository.save(plan);
+        try {
+            plan = planRepository.save(plan);
+            log.info("Investment plan saved successfully: planId={}, userId={}", plan.getId(), plan.getUserId());
+        } catch (Exception e) {
+            log.error("Failed to save investment plan for userId={}", userId, e);
+            throw new RuntimeException("Failed to save investment plan: " + e.getMessage(), e);
+        }
 
         List<InvestmentPlanAllocationEntity> allocEntities = new ArrayList<>();
         int idx = 0;
-        for (var a : rec.getAllocations()) {
+        for (var a : request.getAllocations()) {
             InvestmentPlanAllocationEntity e = new InvestmentPlanAllocationEntity();
             e.setPlanId(plan.getId());
             e.setAllocationType(a.getType());
@@ -82,7 +84,7 @@ public class InvestmentCompleteService {
                         .amount(e.getAmount())
                         .percent(e.getPercent())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         return InvestmentCompleteResponse.builder()
                 .sessionId(UUID.randomUUID().toString())
@@ -98,4 +100,3 @@ public class InvestmentCompleteService {
                 .build();
     }
 }
-

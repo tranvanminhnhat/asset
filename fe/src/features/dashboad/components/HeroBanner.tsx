@@ -1,12 +1,16 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import LogoutButton from '@/features/logout/components/LogoutButton';
 
 const HeroBanner: React.FC = () => {
   const router = useRouter();
 
   return (
     <div className="bg-white rounded-lg shadow-md p-8 mb-12">
+      <div className="flex justify-end mb-4">
+        <LogoutButton />
+      </div>
       <div className="flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex-1">
           <h2 className="text-4xl font-bold text-emerald-950 mb-4">

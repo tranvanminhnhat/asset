@@ -18,7 +18,7 @@ public class InvestmentCompleteResponse {
 
     private Long planId;
 
-    private Long userId;
+    private String userId;
 
     private String type;
 

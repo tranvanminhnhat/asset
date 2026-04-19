@@ -2,13 +2,14 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import FundCard from '../components/FundCard';
+import LogoutButton from '@/features/logout/components/LogoutButton';
 import { useInvestmentRecommendations } from '../hooks/useInvestmentRecommendations';
 import { mapAllocationsToFunds } from '../mappers/investment-recommendations.mapper';
 import { FundAllocation } from '../type/investment-recommendations.type';
 
 const InvestmentRecommendationsPage: React.FC = () => {
   const router = useRouter();
-  const { data, isLoading } = useInvestmentRecommendations();
+  const { data, isLoading, isSubmitting, isError, submitInvestmentComplete } = useInvestmentRecommendations();
 
   if (isLoading || !data) {
     return <div>Loading...</div>;
@@ -33,9 +34,21 @@ const InvestmentRecommendationsPage: React.FC = () => {
     }).format(value);
   };
 
+  const handleCompleteInvestment = async () => {
+    try {
+      await submitInvestmentComplete();
+      router.push('/investment-complete');
+    } catch (error) {
+      console.error('Investment complete failed:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white px-4 py-10">
       <div className="max-w-6xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <LogoutButton />
+        </div>
         {/* Header Section */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-slate-900 mb-3">{portfolio.title}</h1>
@@ -78,6 +91,12 @@ const InvestmentRecommendationsPage: React.FC = () => {
           </div>
         </div>
 
+        {isError && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Không thể hoàn tất đầu tư. Vui lòng thử lại.
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-4 justify-between">
           <button
@@ -87,10 +106,11 @@ const InvestmentRecommendationsPage: React.FC = () => {
             Quay lại
           </button>
           <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
+            onClick={handleCompleteInvestment}
+            disabled={isSubmitting}
+            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
           >
-            Hoàn thành đầu tư →
+            {isSubmitting ? 'Đang hoàn tất...' : 'Hoàn thành đầu tư →'}
           </button>
         </div>
       </div>

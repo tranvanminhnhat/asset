@@ -9,6 +9,7 @@ import com.minhnhat.demo.features.auth.dto.enums.VerificationStatus;
 import com.minhnhat.demo.features.auth.dto.request.LoginRequest;
 import com.minhnhat.demo.features.auth.dto.request.RegisterAccountRequest;
 import com.minhnhat.demo.features.auth.dto.response.LoginResponse;
+import com.minhnhat.demo.features.auth.dto.response.LogoutResponse;
 import com.minhnhat.demo.features.auth.dto.response.RegisterAccountResponse;
 import com.minhnhat.demo.features.auth.entity.UserEntity;
 import com.minhnhat.demo.features.auth.repository.UserRepository;
@@ -193,6 +194,20 @@ public class AuthService {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             log.error("Register validation failed: password mismatch for email={}", request.getEmail());
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_004), REGISTER_LOGIC_ERROR_004);
+        }
+    }
+
+    public LogoutResponse logout() {
+        try {
+            // Clear the SecurityContext
+            SecurityContextHolder.clearContext();
+            log.info("User logged out successfully");
+            return LogoutResponse.builder()
+                    .message("Logged out successfully")
+                    .build();
+        } catch (Exception e) {
+            log.error("Logout failed", e);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
     }
 }

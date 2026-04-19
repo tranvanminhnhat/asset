@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PortfolioSelector from '../components/PortfolioSelector';
+import LogoutButton from '@/features/logout/components/LogoutButton';
 
 // Mock data - in real app, this would come from API
 const PORTFOLIO_OPTIONS = [
@@ -46,6 +47,9 @@ const PortfolioSelectionPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#eff8f1] px-4 py-10">
       <div className="max-w-4xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <LogoutButton />
+        </div>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-3">Phân Bổ Danh Mục Đầu Tư</h1>
           <p className="text-slate-600">

@@ -10,6 +10,7 @@ export const useLogin = () => {
       // Store token in both localStorage and cookies for compatibility
       localStorage.setItem('accessToken', data.data.accessToken);
       document.cookie = `accessToken=${data.data.accessToken}; path=/; max-age=86400; samesite=lax`;
+      document.cookie = 'isLoggedOut=; path=/; max-age=0; samesite=lax';
     }
   }, [isSuccess, data]);
 

@@ -1,11 +1,11 @@
- package com.minhnhat.demo.features.investmentComplete.controller;
+package com.minhnhat.demo.features.investmentComplete.controller;
 
 import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.common.config.MessageService;
+import com.minhnhat.demo.features.investmentComplete.dto.request.InvestmentCompleteRequest;
 import com.minhnhat.demo.features.investmentComplete.dto.response.InvestmentCompleteResponse;
 import com.minhnhat.demo.features.investmentComplete.service.InvestmentCompleteService;
 import com.minhnhat.demo.features.investmentRecommendations.constant.InvestmentRecommendationsConstant;
-import com.minhnhat.demo.features.investmentRecommendations.dto.request.InvestmentRecommendationsRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,7 @@ public class InvestmentCompleteController {
     private static final String SERVICE_NAME = "InvestmentCompleteService";
 
     @PostMapping
-    public ApiResponse<InvestmentCompleteResponse> create(@RequestBody InvestmentRecommendationsRequest request) {
+    public ApiResponse<InvestmentCompleteResponse> create(@RequestBody InvestmentCompleteRequest request) {
         InvestmentCompleteResponse session = service.createSession(request);
         return ApiResponse.<InvestmentCompleteResponse>builder()
                 .data(session)
@@ -29,4 +29,3 @@ public class InvestmentCompleteController {
                 .build();
     }
 }
-

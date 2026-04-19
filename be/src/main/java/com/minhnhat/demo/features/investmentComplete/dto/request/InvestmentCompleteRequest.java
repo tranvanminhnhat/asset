@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,7 +18,17 @@ public class InvestmentCompleteRequest {
 
     // allocation type/risk profile: will be matched against master table (e.g., SAFE, BALANCED, GROWTH)
     private String type;
+
+    // list of allocations that can be edited by user
+    private List<Allocation> allocations;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Allocation {
+        private String type;
+        private BigDecimal amount;
+        private BigDecimal percent;
+    }
 }
-
-
-
