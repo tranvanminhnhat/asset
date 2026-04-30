@@ -26,10 +26,6 @@ public class PortfolioEntity extends BaseEntity {
     @Column(name = "user_id", nullable = false, updatable = false, length = 36)
     private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, updatable = false, insertable = false)
-    private UserEntity user;
-
     @Column(name = "asset_type", nullable = false, length = 50)
     private String assetType;
 

@@ -3,9 +3,10 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('accessToken')?.value;
+  const accessToken = request.cookies.get('accessToken')?.value;
+  const refreshToken = request.cookies.get('refreshToken')?.value;
   const isLoggedOut = request.cookies.get('isLoggedOut')?.value === '1';
-  const isAuthenticated = Boolean(token) && !isLoggedOut;
+  const isAuthenticated = Boolean(accessToken || refreshToken) && !isLoggedOut;
 
   const publicRoutes = ['/login', '/register'];
   const isPublicRoute = publicRoutes.some(

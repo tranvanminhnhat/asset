@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth
                                 // Public endpoints - no authentication required
-                                .requestMatchers("/auth/register", "/auth/login", "/auth/verify-email", "/auth/logout").permitAll()
+                                .requestMatchers("/auth/register", "/auth/login", "/auth/verify-email", "/auth/logout", "/auth/refresh-token").permitAll()
                                 // All other endpoints - require authentication
                                 .anyRequest().authenticated()
                 )

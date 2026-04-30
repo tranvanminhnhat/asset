@@ -8,8 +8,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.minhnhat.demo.features.auth.dto.request.LoginRequest;
+import com.minhnhat.demo.features.auth.dto.request.RefreshTokenRequest;
 import com.minhnhat.demo.features.auth.dto.request.RegisterAccountRequest;
 import com.minhnhat.demo.features.auth.dto.response.LoginResponse;
+import com.minhnhat.demo.features.auth.dto.response.RefreshTokenResponse;
 import com.minhnhat.demo.features.auth.dto.response.RegisterAccountResponse;
 import com.minhnhat.demo.features.auth.dto.response.LogoutResponse;
 import com.minhnhat.demo.features.auth.service.AuthService;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static com.minhnhat.demo.features.auth.constant.AuthConstant.LOGIN_INFO_001;
 import static com.minhnhat.demo.features.auth.constant.AuthConstant.REGISTER_INFO_001;
 import static com.minhnhat.demo.features.auth.constant.AuthConstant.LOGOUT_INFO_001;
+import static com.minhnhat.demo.features.auth.constant.AuthConstant.REFRESH_TOKEN_INFO_001;
 
 @RestController
 @RequestMapping(value = "/auth")
@@ -73,6 +76,14 @@ public class AuthController {
         return ApiResponse.<LogoutResponse>builder()
                 .data(service.logout())
                 .message(LOGOUT_INFO_001, messageService.get(LOGOUT_INFO_001), SERVICE_NAME)
+                .build();
+    }
+
+    @PostMapping("/refresh-token")
+    public ApiResponse<RefreshTokenResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+        return ApiResponse.<RefreshTokenResponse>builder()
+                .data(service.refreshToken(request))
+                .message(REFRESH_TOKEN_INFO_001, messageService.get(REFRESH_TOKEN_INFO_001), SERVICE_NAME)
                 .build();
     }
 }

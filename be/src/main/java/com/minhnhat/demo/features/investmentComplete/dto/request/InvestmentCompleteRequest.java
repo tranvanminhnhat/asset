@@ -16,9 +16,6 @@ public class InvestmentCompleteRequest {
     // total investment amount
     private BigDecimal amount;
 
-    // allocation strategy ID
-    private Long strategyId;
-
     // allocation type/risk profile (e.g., SAFE, BALANCED, GROWTH)
     private String type;
 
@@ -32,6 +29,7 @@ public class InvestmentCompleteRequest {
     public static class Allocation {
         private String type;
         private BigDecimal amount;
+        private Integer quantity;
         private BigDecimal percent;
     }
 }

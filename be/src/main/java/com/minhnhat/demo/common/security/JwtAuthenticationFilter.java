@@ -27,6 +27,7 @@ import java.security.Key;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
+    private final JwtTokenProvider jwtTokenProvider;
     private final String SECRET_KEY = "secret-key-demo-secret-key-demo-secret-key-demo";
 
     @Override
@@ -35,9 +36,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (jwt != null && validateToken(jwt)) {
-                String userId = getUserIdFromToken(jwt);
-                String email = getEmailFromToken(jwt);
+            if (jwt != null && jwtTokenProvider.validateToken(jwt)) {
+                String userId = jwtTokenProvider.getUserIdFromToken(jwt);
+                String email = jwtTokenProvider.getEmailFromToken(jwt);
 
                 // Load user from database
                 UserEntity userEntity = userRepository.findById(userId).orElse(null);
@@ -63,40 +64,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(7);
         }
         return null;
-    }
-
-    private boolean validateToken(String token) {
-        try {
-            Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (Exception e) {
-            log.error("JWT validation failed: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    private String getUserIdFromToken(String token) {
-        Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
-    }
-
-    private String getEmailFromToken(String token) {
-        Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.get("email", String.class);
     }
 }
 

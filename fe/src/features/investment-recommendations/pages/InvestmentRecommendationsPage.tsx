@@ -36,11 +36,12 @@ const InvestmentRecommendationsPage: React.FC = () => {
   }
 
   const funds = mapAllocationsToFunds(data.allocations);
+  const totalAmount = funds.reduce((sum, fund) => sum + fund.totalAmount, 0);
   const portfolio = {
     id: '1',
     title: 'Đề xuất Đầu tư Toàn diện',
     description: 'Phân tích Chi tiết Danh mục Đầu tư',
-    totalAmount: data.amount,
+    totalAmount,
     currency: 'VND',
     funds,
     investmentStrategy: data.type,

@@ -42,38 +42,36 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
       {/* Header with icon and title */}
       <div className="flex items-center gap-3 mb-4">
         <span className="flex h-8 w-8 items-center justify-center rounded border border-blue-400 bg-blue-50 text-lg">
-          {getTypeIcon(portfolio.type)}
+          {getTypeIcon(portfolio.assetType)}
         </span>
         <div>
-          <h3 className="text-base font-semibold text-slate-900 truncate" title={getTypeLabel(portfolio.type)}>
-            {getTypeLabel(portfolio.type)}
+          <h3 className="text-base font-semibold text-slate-900 truncate" title={getTypeLabel(portfolio.assetType)}>
+            {getTypeLabel(portfolio.assetType)}
           </h3>
-          <p className="text-xs text-slate-500">{portfolio.name}</p>
+          <p className="text-xs text-slate-500">{portfolio.assetType}</p>
         </div>
       </div>
 
       {/* Price info */}
       <div className="mb-4 space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-600">Mã danh mục</span>
-          <span className="text-sm font-semibold text-slate-900">#{portfolio.id}</span>
+          <span className="text-sm text-slate-600">Loại tài sản</span>
+          <span className="text-sm font-semibold text-slate-900">{portfolio.assetType}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-600">Tổng vốn</span>
-          <span className="text-sm font-semibold text-slate-900 truncate" title={formatCurrency(portfolio.purchaseValue)}>
-            {formatCurrency(portfolio.purchaseValue)}
+          <span className="text-sm text-slate-600">Số lượng</span>
+          <span className="text-sm font-semibold text-slate-900">{portfolio.quantity}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-slate-600">Vốn đầu tư</span>
+          <span className="text-sm font-semibold text-slate-900 truncate" title={formatCurrency(portfolio.investedCost)}>
+            {formatCurrency(portfolio.investedCost)}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm text-slate-600">Giá hiện tại</span>
           <span className="text-sm font-semibold text-slate-900 truncate" title={formatCurrency(portfolio.currentValue)}>
             {formatCurrency(portfolio.currentValue)}
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-600">Tên danh mục</span>
-          <span className="text-sm font-semibold text-slate-900 truncate" title={portfolio.name}>
-            {portfolio.name}
           </span>
         </div>
       </div>
@@ -90,7 +88,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
           </p>
         </div>
         <span className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${portfolio.isProfit ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-          {portfolio.isProfit ? '+' : ''}{formatPercentage(portfolio.profitPercentage)}
+          {portfolio.isProfit ? '+' : ''}{formatPercentage(portfolio.profitRate)}
         </span>
       </div>
     </div>

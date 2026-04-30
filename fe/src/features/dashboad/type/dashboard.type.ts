@@ -8,13 +8,17 @@ export interface ApiMessage {
 
 export interface ApiResponse<T> {
   data: T;
-  message: ApiMessage;
+  message?: ApiMessage | string;
+  statusCode?: number;
+  timestamp?: string;
 }
 
 export interface DashboardSummary {
+  totalInvestedCost: number;
   totalCurrentValue: number;
   totalPurchaseValue: number;
   totalProfit: number;
+  totalProfitRate: number;
   profitPercentage: number;
   totalAssetTypes?: number;
   totalTransactions?: number;
@@ -25,9 +29,13 @@ export interface DashboardPortfolioItem {
   id: number;
   name: string;
   type: string;
+  assetType: string;
+  quantity: number;
+  investedCost: number;
   purchaseValue: number;
   currentValue: number;
   profit: number;
+  profitRate: number;
   profitPercentage: number;
   isProfit: boolean;
 }

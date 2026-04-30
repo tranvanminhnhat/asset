@@ -13,7 +13,9 @@ export interface FundAllocation {
   id: string;
   name: string;
   type: string;
-  amount: number;
+  unitAmount: number;
+  quantity: number;
+  totalAmount: number;
   currency: string;
   percentage: number;
   description: string;

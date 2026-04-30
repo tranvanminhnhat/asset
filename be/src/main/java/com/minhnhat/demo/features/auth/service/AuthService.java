@@ -7,9 +7,11 @@ import com.minhnhat.demo.common.mail.MailTemplateType;
 import com.minhnhat.demo.common.config.MessageService;
 import com.minhnhat.demo.features.auth.dto.enums.VerificationStatus;
 import com.minhnhat.demo.features.auth.dto.request.LoginRequest;
+import com.minhnhat.demo.features.auth.dto.request.RefreshTokenRequest;
 import com.minhnhat.demo.features.auth.dto.request.RegisterAccountRequest;
 import com.minhnhat.demo.features.auth.dto.response.LoginResponse;
 import com.minhnhat.demo.features.auth.dto.response.LogoutResponse;
+import com.minhnhat.demo.features.auth.dto.response.RefreshTokenResponse;
 import com.minhnhat.demo.features.auth.dto.response.RegisterAccountResponse;
 import com.minhnhat.demo.features.auth.entity.UserEntity;
 import com.minhnhat.demo.features.auth.repository.UserRepository;
@@ -99,8 +101,19 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Generate access token
-        String accessToken = jwtTokenProvider.generateToken(principal);
+        // Generate access token and refresh token
+        String accessToken = jwtTokenProvider.generateAccessToken(principal);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(principal);
+
+        // Save refresh token to database
+        userEntity.setToken(refreshToken);
+        try {
+            userRepository.save(userEntity);
+            log.info("Refresh token saved successfully for email={}", userEntity.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to save refresh token for email={}", userEntity.getEmail(), e);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
 
         // Create response
         return LoginResponse.builder()
@@ -108,6 +121,7 @@ public class AuthService {
                 .email(userEntity.getEmail())
                 .status(userEntity.getStatus())
                 .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -249,5 +263,62 @@ public class AuthService {
             log.error("Logout failed", e);
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
+    }
+
+    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
+        // Validate request
+        if (request == null || request.getRefreshToken() == null || request.getRefreshToken().trim().isEmpty()) {
+            log.error("Refresh token validation failed: token is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        // Validate token format
+        if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
+            log.error("Refresh token validation failed: invalid or expired token");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        // Check if it's a refresh token
+        if (!jwtTokenProvider.isRefreshToken(request.getRefreshToken())) {
+            log.error("Refresh token validation failed: token is not a refresh token");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        // Get userId and email from token
+        String userId = jwtTokenProvider.getUserIdFromToken(request.getRefreshToken());
+        String email = jwtTokenProvider.getEmailFromToken(request.getRefreshToken());
+
+        // Get user entity
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("Refresh token validation failed: user not found for userId={}", userId);
+                    return new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+                });
+
+        // Validate that stored refresh token matches the provided token
+        if (userEntity.getToken() == null || !userEntity.getToken().equals(request.getRefreshToken())) {
+            log.error("Refresh token validation failed: token mismatch for userId={}", userId);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        // Generate new access token and refresh token
+        String newAccessToken = jwtTokenProvider.generateAccessToken(userId, email);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, email);
+
+        // Update refresh token in database
+        userEntity.setToken(newRefreshToken);
+        try {
+            userRepository.save(userEntity);
+            log.info("Refresh token renewed successfully for userId={}", userId);
+        } catch (Exception e) {
+            log.error("Failed to update refresh token for userId={}", userId, e);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
+
+        // Create response
+        return RefreshTokenResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
     }
 }

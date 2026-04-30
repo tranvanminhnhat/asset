@@ -29,6 +29,6 @@ public class UserEntity extends BaseEntity {
     @Column(name = "status", nullable = false, length = 30)
     private String status;
 
-    @Column(name = "token", length = 45)
+    @Column(name = "token", length = 2000)
     private String token;
 }

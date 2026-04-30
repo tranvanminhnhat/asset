@@ -1,36 +1,81 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { formatCurrency } from '@/lib/formatters';
 import RiskOption from '../components/RiskOption';
 import { useInvestmentAmount } from '../hooks/useInvestmentAmount';
 import LogoutButton from '@/features/logout/components/LogoutButton';
-import { InvestmentAmountRequest } from '../type/investment-amount.type';
+import { InvestmentAmountRequest, InvestmentType } from '../type/investment-amount.type';
+
+interface InvestmentAmountFormValues {
+  amount: string;
+  type: InvestmentType;
+}
 
 const InvestmentAmountPage: React.FC = () => {
   const router = useRouter();
-  const [amount, setAmount] = useState('');
-  const [type, setType] = useState<'SAFE' | 'BALANCED' | 'GROWTH'>('SAFE');
-  const { submitInvestmentAmount, isLoading, error } = useInvestmentAmount();
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<InvestmentAmountFormValues>({
+    defaultValues: {
+      amount: '',
+      type: 'SAFE',
+    },
+  });
+  const {
+    investmentTypeOptions,
+    isLoadingTypeOptions,
+    isTypeOptionsError,
+    submitInvestmentAmount,
+    isLoading,
+    error,
+  } = useInvestmentAmount();
 
-  const handleContinue = async () => {
-    const normalizedAmount = Number(amount.replace(/[^\d.]/g, ''));
+  const selectedType = useWatch({ control, name: 'type' });
+  const amount = useWatch({ control, name: 'amount' }) || '';
 
-    if (!normalizedAmount) {
+  useEffect(() => {
+    if (!investmentTypeOptions.length) {
+      return;
+    }
+
+    const isValidSelection = investmentTypeOptions.some((option) => option.type === selectedType);
+
+    if (!isValidSelection) {
+      setValue('type', investmentTypeOptions[0].type);
+    }
+  }, [investmentTypeOptions, selectedType, setValue]);
+
+  const normalizedAmount = Number(amount.replace(/[^\d]/g, ''));
+
+  const handleContinue = async (formValues: InvestmentAmountFormValues) => {
+    const parsedAmount = Number(formValues.amount.replace(/[^\d]/g, ''));
+
+    if (!parsedAmount) {
       return;
     }
 
     const request: InvestmentAmountRequest = {
-      amount: normalizedAmount,
-      type,
+      amount: parsedAmount,
+      type: formValues.type,
     };
+
     const response = await submitInvestmentAmount(request);
+
     if (response) {
-      localStorage.setItem('investmentAllocations', JSON.stringify({
-        allocations: response.allocations,
-        type,
-        amount: normalizedAmount,
-      }));
+      localStorage.setItem(
+        'investmentAllocations',
+        JSON.stringify({
+          allocations: response.allocations,
+          type: formValues.type,
+          amount: parsedAmount,
+        }),
+      );
       router.push('/investment-recommendations');
     }
   };
@@ -76,26 +121,35 @@ const InvestmentAmountPage: React.FC = () => {
             <p className="text-slate-600 mb-6">
               Hãy cho chúng tôi biết về chi phí và thích rủi ro của bạn để chúng tôi có thể đưa ra các đề xuất phù hợp.
             </p>
-            <div className="space-y-3">
-              <RiskOption
-                label="An Toàn"
-                description="Bảo toàn vốn, tích lũy chậm chạp đơn giản từ đầu tư kho."
-                isSelected={type === 'SAFE'}
-                onClick={() => setType('SAFE')}
+            {isLoadingTypeOptions && (
+              <p className="text-sm text-slate-600">Đang tải lựa chọn chiến lược đầu tư...</p>
+            )}
+
+            {isTypeOptionsError && !isLoadingTypeOptions && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                Không thể tải dữ liệu chiến lược đầu tư.
+              </div>
+            )}
+
+            {!isLoadingTypeOptions && !isTypeOptionsError && (
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <div className="space-y-3">
+                    {investmentTypeOptions.map((option) => (
+                      <RiskOption
+                        key={option.type}
+                        label={option.label}
+                        description={option.description}
+                        isSelected={field.value === option.type}
+                        onClick={() => field.onChange(option.type)}
+                      />
+                    ))}
+                  </div>
+                )}
               />
-              <RiskOption
-                label="Cân Bằng"
-                description="Tăng trưởng cân bằng giữa bảo toàn và gia tăng tài sản dài hạn."
-                isSelected={type === 'BALANCED'}
-                onClick={() => setType('BALANCED')}
-              />
-              <RiskOption
-                label="Tăng Trưởng"
-                description="Hướng tới lợi nhuận cao hơn với chiến lược đầu tư tăng trưởng."
-                isSelected={type === 'GROWTH'}
-                onClick={() => setType('GROWTH')}
-              />
-            </div>
+            )}
           </div>
 
           <hr className="my-8" />
@@ -109,18 +163,21 @@ const InvestmentAmountPage: React.FC = () => {
               <input
                 type="text"
                 inputMode="numeric"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                {...register('amount', {
+                  required: 'Vui lòng nhập số tiền đầu tư.',
+                  validate: (value) => Number(value.replace(/[^\d]/g, '')) > 0 || 'Số tiền phải lớn hơn 0.',
+                })}
                 className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-semibold"
                 placeholder="Ví dụ: 10000000"
               />
               <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-600">₫</span>
-              {amount && !Number.isNaN(Number(amount.replace(/[^\d.]/g, ''))) && (
+              {amount && !Number.isNaN(normalizedAmount) && (
                 <p className="mt-3 text-sm text-slate-600">
-                  Số tiền dự kiến: {formatCurrency(Number(amount.replace(/[^\d.]/g, '')))}
+                  Số tiền dự kiến: {formatCurrency(normalizedAmount)}
                 </p>
               )}
             </div>
+            {errors.amount && <p className="mt-2 text-sm text-red-600">{errors.amount.message}</p>}
           </div>
 
           <hr className="my-8" />
@@ -141,8 +198,8 @@ const InvestmentAmountPage: React.FC = () => {
             Đặt lại
           </button>
           <button
-            onClick={handleContinue}
-            disabled={isLoading || !amount}
+            onClick={handleSubmit(handleContinue)}
+            disabled={isLoading || isLoadingTypeOptions || !investmentTypeOptions.length}
             className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
           >
             {isLoading ? 'Đang xử lý...' : 'Tiếp tục →'}

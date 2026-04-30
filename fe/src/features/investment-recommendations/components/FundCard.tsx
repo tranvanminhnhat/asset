@@ -36,8 +36,11 @@ const FundCard: React.FC<FundCardProps> = ({ fund }) => {
 
       <div className="space-y-3 mb-4">
         <div>
-          <p className="text-sm text-slate-600">Số tiền đầu tư</p>
-          <p className="text-2xl font-bold text-slate-900">{formatCurrency(fund.amount)}</p>
+          <p className="text-sm text-slate-600">Tổng tiền đầu tư</p>
+          <p className="text-2xl font-bold text-slate-900">{formatCurrency(fund.totalAmount)}</p>
+          <p className="text-xs text-slate-500 mt-1">
+            {fund.quantity} quantity x {formatCurrency(fund.unitAmount)}/quantity
+          </p>
         </div>
         <div>
           <p className="text-sm text-slate-600">Tỷ lệ phân bổ</p>

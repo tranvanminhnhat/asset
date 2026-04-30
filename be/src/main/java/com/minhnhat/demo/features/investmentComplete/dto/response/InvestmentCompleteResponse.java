@@ -32,6 +32,7 @@ public class InvestmentCompleteResponse {
     public static class Allocation {
         private String type;
         private BigDecimal amount;
+        private Integer quantity;
         private BigDecimal percent;
     }
 }

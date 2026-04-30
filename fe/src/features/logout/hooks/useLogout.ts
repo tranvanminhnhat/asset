@@ -1,13 +1,13 @@
 import { useRouter } from 'next/navigation';
 import { useLogoutMutation } from '../services/logout.api';
+import { clearAuthTokens, setLoggedOutFlag } from '@/common/utils/authSession';
 
-const CLEAR_KEYS = ['accessToken', 'investmentAllocations', 'investmentCompleteResult'];
+const CLEAR_KEYS = ['investmentAllocations', 'investmentCompleteResult'];
 
 const clearSession = () => {
   CLEAR_KEYS.forEach((key) => localStorage.removeItem(key));
-  document.cookie = 'accessToken=; path=/; max-age=0; samesite=lax';
-  document.cookie = 'accessToken=; path=/; max-age=0; samesite=lax; secure';
-  document.cookie = 'isLoggedOut=1; path=/; max-age=86400; samesite=lax';
+  clearAuthTokens();
+  setLoggedOutFlag();
 };
 
 export const useLogout = () => {

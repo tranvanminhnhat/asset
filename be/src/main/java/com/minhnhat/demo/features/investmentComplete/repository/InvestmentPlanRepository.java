@@ -26,10 +26,7 @@ public interface InvestmentPlanRepository extends JpaRepository<InvestmentPlanEn
     Optional<InvestmentPlanEntity> findByIdWithDetails(@Param("id") Long id);
 
     @Query("SELECT p FROM InvestmentPlanEntity p " +
-           "WHERE p.userId = :userId " +
-           "AND p.status = :status")
-    List<InvestmentPlanEntity> findByUserIdAndStatus(
-            @Param("userId") String userId,
-            @Param("status") String status);
+           "WHERE p.userId = :userId ")
+    List<InvestmentPlanEntity> findByUserIdAndStatus(@Param("userId") String userId);
 }
 

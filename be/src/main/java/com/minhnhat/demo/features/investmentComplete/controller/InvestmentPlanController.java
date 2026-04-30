@@ -72,13 +72,11 @@ public class InvestmentPlanController {
      * Get plans by status
      */
     @GetMapping("/status/{status}")
-    public ApiResponse<List<InvestmentPlanResponse>> getPlansByStatus(
-            @PathVariable String status) {
-        log.info("Fetching investment plans with status: {}", status);
+    public ApiResponse<List<InvestmentPlanResponse>> getPlansByStatus() {
 
         // Validate & Load
         CurrentUserInfo user = securityUtils.getCurrentUser();
-        List<InvestmentPlanEntity> plans = investmentPlanService.getPlansByStatus(user.getUserId(), status);
+        List<InvestmentPlanEntity> plans = investmentPlanService.getPlansByStatus(user.getUserId());
 
         // Build Response
         List<InvestmentPlanResponse> responses = plans.stream()
@@ -107,10 +105,7 @@ public class InvestmentPlanController {
         return InvestmentPlanResponse.builder()
                 .planId(entity.getId())
                 .userId(entity.getUserId())
-                .strategyId(entity.getStrategyId())
                 .totalAmount(entity.getTotalAmount())
-                .status(entity.getStatus())
-                .recommendationSnapshot(entity.getRecommendationSnapshot())
                 .allocations(allocations)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())

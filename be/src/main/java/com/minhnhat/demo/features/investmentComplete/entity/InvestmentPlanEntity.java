@@ -34,18 +34,8 @@ public class InvestmentPlanEntity extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, updatable = false, insertable = false)
     private UserEntity user;
 
-    @Column(name = "strategy_id", nullable = false)
-    private Long strategyId;
-
     @Column(name = "total_amount", precision = 19, scale = 2, nullable = false)
     private BigDecimal totalAmount;
-
-    @Column(name = "status", length = 30, nullable = false)
-    private String status;
-
-    @Column(name = "recommendation_snapshot", columnDefinition = "JSON")
-    private String recommendationSnapshot;
-
 
     @OneToMany(mappedBy = "plan", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<InvestmentPlanAllocationEntity> allocations = new ArrayList<>();

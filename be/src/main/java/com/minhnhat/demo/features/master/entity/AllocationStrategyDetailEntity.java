@@ -7,7 +7,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "allocation_strategy_details")
+@Table(name = "mst_allocation_strategy_details")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,5 +32,8 @@ public class AllocationStrategyDetailEntity extends BaseEntity {
 
     @Column(name = "percentage", precision = 5, scale = 2, nullable = false)
     private BigDecimal percentage;
+
+    @Column(name = "strategy_code", length = 45, nullable = false)
+    private String strategyCode;
 }
 

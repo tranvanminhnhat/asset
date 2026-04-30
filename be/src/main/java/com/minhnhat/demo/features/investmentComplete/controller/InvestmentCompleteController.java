@@ -22,7 +22,7 @@ public class InvestmentCompleteController {
 
     @PostMapping
     public ApiResponse<InvestmentCompleteResponse> create(@RequestBody InvestmentCompleteRequest request) {
-        InvestmentCompleteResponse session = service.createSession(request);
+        InvestmentCompleteResponse session = service.createInvestmentSession(request);
         return ApiResponse.<InvestmentCompleteResponse>builder()
                 .data(session)
                 .message(InvestmentRecommendationsConstant.ALLOCATE_INFO_001, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_INFO_001), SERVICE_NAME)

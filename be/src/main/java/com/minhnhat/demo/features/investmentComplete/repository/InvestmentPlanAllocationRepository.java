@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface InvestmentPlanAllocationRepository extends JpaRepository<InvestmentPlanAllocationEntity, Long> {
@@ -23,5 +24,25 @@ public interface InvestmentPlanAllocationRepository extends JpaRepository<Invest
            "LEFT JOIN FETCH a.plan " +
            "WHERE a.planId = :planId")
     List<InvestmentPlanAllocationEntity> findByPlanIdWithDetails(@Param("planId") Long planId);
+
+    /**
+     * Optimized query for Dashboard - aggregates allocation data per asset type
+     * Joins with asset prices to get current market price
+     * 
+     * Returns: assetType, totalQuantity, totalAmount, currentPrice
+     * GROUP BY assetType to aggregate across all plans
+     */
+    @Query(value = "SELECT " +
+            "ipa.asset_type AS assetType, " +
+            "SUM(ipa.quantity) AS totalQuantity, " +
+            "SUM(ipa.amount) AS totalAmount, " +
+            "ap.price AS currentPrice " +
+            "FROM investment_plan_allocations ipa " +
+            "JOIN investment_plans ip ON ipa.plan_id = ip.id " +
+            "LEFT JOIN asset_prices ap ON ipa.asset_type = ap.asset_type " +
+            "WHERE ip.user_id = :userId " +
+            "GROUP BY ipa.asset_type, ap.price", 
+           nativeQuery = true)
+    List<Map<String, Object>> findDashboardDataByUserId(@Param("userId") String userId);
 }
 

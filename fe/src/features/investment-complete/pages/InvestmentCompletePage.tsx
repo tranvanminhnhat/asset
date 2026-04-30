@@ -90,7 +90,7 @@ const InvestmentCompletePage: React.FC = () => {
           </div>
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-5">
             <p className="text-sm text-slate-600 mb-2">Trạng thái</p>
-            <p className="text-2xl font-bold text-slate-900">{data.status}</p>
+            <p className="text-2xl font-bold text-slate-900">{data.status || 'CONFIRMED'}</p>
           </div>
         </div>
 
@@ -119,13 +119,23 @@ const InvestmentCompletePage: React.FC = () => {
         <div className="bg-white border border-slate-200 rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Phân bổ đầu tư</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.allocations.map((allocation, index) => (
-              <div key={`${allocation.type}-${index}`} className="bg-slate-50 border border-slate-200 rounded-lg p-5">
-                <p className="text-sm text-slate-500 mb-2">{allocation.type}</p>
-                <p className="text-xl font-bold text-slate-900 mb-1">{formatCurrency(allocation.amount)}</p>
-                <p className="text-sm text-slate-600">Tỷ lệ: {(allocation.percent * 100).toFixed(2)}%</p>
-              </div>
-            ))}
+            {data.allocations.map((allocation, index) => {
+              const quantity = Number.isFinite(allocation.quantity)
+                ? Math.max(1, Math.floor(allocation.quantity))
+                : 1;
+              const totalAmount = allocation.amount * quantity;
+
+              return (
+                <div key={`${allocation.type}-${index}`} className="bg-slate-50 border border-slate-200 rounded-lg p-5">
+                  <p className="text-sm text-slate-500 mb-2">{allocation.type}</p>
+                  <p className="text-xl font-bold text-slate-900 mb-1">{formatCurrency(totalAmount)}</p>
+                  <p className="text-xs text-slate-500 mb-1">
+                    {quantity} quantity x {formatCurrency(allocation.amount)}/quantity
+                  </p>
+                  <p className="text-sm text-slate-600">Tỷ lệ: {(allocation.percent * 100).toFixed(2)}%</p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -134,11 +144,9 @@ const InvestmentCompletePage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <p className="text-slate-500 text-sm mb-1">Recommendation Snapshot</p>
-              <p className="text-slate-900 whitespace-pre-wrap wrap-break-word">{data.recommendationSnapshot}</p>
-            </div>
-            <div>
-              <p className="text-slate-500 text-sm mb-1">Ghi chú</p>
-              <p className="text-slate-900 whitespace-pre-wrap wrap-break-word">{data.note || 'Không có ghi chú'}</p>
+              <p className="text-slate-900 whitespace-pre-wrap wrap-break-word">
+                {data.recommendationSnapshot || 'Không có snapshot'}
+              </p>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ export interface InvestmentAmountRequest {
 export interface Allocation {
   type: string;
   amount: number;
+  quantity: number;
   percent: number;
 }
 
@@ -23,6 +24,42 @@ export interface InvestmentAmountResponse {
 
 export interface RecommendationResponse {
   allocations: Allocation[];
+}
+
+export interface InvestmentTypeOption {
+  type: InvestmentType;
+  label: string;
+  description: string;
+}
+
+export interface AllocationMasterItem {
+  code: string;
+  stockPercent: number;
+  emergencyPercent: number;
+  goldPercent: number;
+  etfPercent: number;
+}
+
+export interface AllocationMasterListResponse {
+  data: AllocationMasterItem[];
+  message?: {
+    code: string;
+    message: string;
+    service: string;
+  };
+}
+
+export interface InvestmentTypeOptionsData {
+  options: InvestmentTypeOption[];
+}
+
+export interface InvestmentTypeOptionsResponse {
+  data: InvestmentTypeOptionsData | InvestmentTypeOption[];
+  message?: {
+    code: string;
+    message: string;
+    service: string;
+  };
 }
 
 export interface InvestmentGoal {

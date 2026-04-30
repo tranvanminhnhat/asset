@@ -37,6 +37,9 @@ public class InvestmentPlanAllocationEntity extends BaseEntity {
     @Column(name = "amount", precision = 19, scale = 2, nullable = false)
     private BigDecimal amount;
 
+    @Column(name = "quantity", precision = 19, scale = 6)
+    private Integer quantity;
+
     @Column(name = "percentage", precision = 5, scale = 2, nullable = false)
     private BigDecimal percentage;
 }

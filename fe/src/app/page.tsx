@@ -2,16 +2,17 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { hasAuthToken, isLoggedOut } from '@/common/utils/authSession';
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check for token in localStorage or cookies
-    const token = localStorage.getItem('accessToken') ||
-                  document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1];
+    const token = hasAuthToken();
+    const loggedOut = isLoggedOut();
+    const authenticated = token && !loggedOut;
 
-    if (token) {
+    if (authenticated) {
       // If logged in, redirect to dashboard
       router.push('/dashboard');
     } else {

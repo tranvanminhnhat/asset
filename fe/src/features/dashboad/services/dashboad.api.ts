@@ -10,7 +10,7 @@ export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboard: builder.query<ApiResponse<DashboardResponse>, void>({
       query: () => ({
-        url: "/dashboard",
+        url: '/api/v1/dashboard',
         method: "GET",
       }),
     }),

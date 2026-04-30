@@ -1,6 +1,5 @@
 package com.minhnhat.demo.features.investmentComplete.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.features.investmentComplete.dto.request.InvestmentCompleteRequest;
@@ -27,7 +26,7 @@ public class InvestmentCompleteService {
     private final SecurityUtils securityUtils;
     private final ObjectMapper objectMapper;
 
-    public InvestmentCompleteResponse createSession(final InvestmentCompleteRequest request) {
+    public InvestmentCompleteResponse createInvestmentSession(final InvestmentCompleteRequest request) {
         // Get current user
         String userId = null;
         try {
@@ -42,16 +41,7 @@ public class InvestmentCompleteService {
         // Create investment plan
         InvestmentPlanEntity plan = new InvestmentPlanEntity();
         plan.setUserId(userId);
-        plan.setStrategyId(request.getStrategyId()); // Now requires strategyId
         plan.setTotalAmount(request.getAmount());
-        plan.setStatus("CONFIRMED");
-
-        try {
-            plan.setRecommendationSnapshot(objectMapper.writeValueAsString(request.getAllocations()));
-        } catch (JsonProcessingException e) {
-            log.warn("Failed to serialize allocations to JSON", e);
-            plan.setRecommendationSnapshot(null);
-        }
 
         try {
             plan = planRepository.save(plan);
@@ -68,6 +58,7 @@ public class InvestmentCompleteService {
             e.setPlanId(plan.getId());
             e.setAssetType(a.getType()); // Changed from allocationType to assetType
             e.setAmount(a.getAmount());
+            e.setQuantity(a.getQuantity());
             e.setPercentage(a.getPercent()); // Changed from percent to percentage
             allocEntities.add(e);
         }
@@ -78,6 +69,7 @@ public class InvestmentCompleteService {
                 .map(e -> InvestmentCompleteResponse.Allocation.builder()
                         .type(e.getAssetType())
                         .amount(e.getAmount())
+                        .quantity(e.getQuantity())
                         .percent(e.getPercentage())
                         .build())
                 .toList();
@@ -88,8 +80,6 @@ public class InvestmentCompleteService {
                 .userId(plan.getUserId())
                 .type(request.getType())
                 .totalAmount(plan.getTotalAmount())
-                .status(plan.getStatus())
-                .recommendationSnapshot(plan.getRecommendationSnapshot())
                 .createdAt(plan.getCreatedAt())
                 .allocations(allocations)
                 .build();

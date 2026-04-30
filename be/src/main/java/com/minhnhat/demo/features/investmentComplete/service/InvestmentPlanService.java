@@ -33,23 +33,16 @@ public class InvestmentPlanService {
     public InvestmentPlanEntity createPlan(
             String userId,
             Long strategyId,
-            BigDecimal totalAmount,
-            String status,
-            String recommendationSnapshot) {
+            BigDecimal totalAmount) {
 
-        log.info("Creating investment plan - User: {}, Strategy: {}, Amount: {}, Status: {}",
-                userId, strategyId, totalAmount, status);
 
         // Validate inputs
-        validatePlanInputs(userId, strategyId, totalAmount, status);
+        validatePlanInputs(userId, strategyId, totalAmount);
 
         // Create entity
         InvestmentPlanEntity plan = InvestmentPlanEntity.builder()
                 .userId(userId)
-                .strategyId(strategyId)
                 .totalAmount(totalAmount)
-                .status(status)
-                .recommendationSnapshot(recommendationSnapshot)
                 .build();
 
         // Persist
@@ -81,9 +74,8 @@ public class InvestmentPlanService {
      * Get plans by status
      */
     @Transactional(readOnly = true)
-    public List<InvestmentPlanEntity> getPlansByStatus(String userId, String status) {
-        log.debug("Fetching plans for user: {}, status: {}", userId, status);
-        return investmentPlanRepository.findByUserIdAndStatus(userId, status);
+    public List<InvestmentPlanEntity> getPlansByStatus(String userId) {
+        return investmentPlanRepository.findByUserIdAndStatus(userId);
     }
 
     /**
@@ -96,7 +88,6 @@ public class InvestmentPlanService {
         InvestmentPlanEntity plan = investmentPlanRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan not found: " + planId));
 
-        plan.setStatus(newStatus);
 
         InvestmentPlanEntity updated = investmentPlanRepository.save(plan);
         log.info("Plan status updated");
@@ -146,7 +137,7 @@ public class InvestmentPlanService {
     /**
      * Validation helper
      */
-    private void validatePlanInputs(String userId, Long strategyId, BigDecimal totalAmount, String status) {
+    private void validatePlanInputs(String userId, Long strategyId, BigDecimal totalAmount) {
         if (userId == null || userId.isEmpty()) {
             log.error("Invalid user ID");
             throw new IllegalArgumentException("User ID cannot be null or empty");
@@ -158,10 +149,6 @@ public class InvestmentPlanService {
         if (totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
             log.error("Invalid total amount: {}", totalAmount);
             throw new IllegalArgumentException("Total amount must be positive");
-        }
-        if (status == null || status.isEmpty()) {
-            log.error("Invalid status");
-            throw new IllegalArgumentException("Status cannot be null or empty");
         }
     }
 }

@@ -31,9 +31,9 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
       <div className="grid grid-cols-3 gap-4 mb-6">
         {/* Purchase Value */}
         <div className="text-center p-4 bg-gray-50 rounded-xl">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Giá mua</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Tổng vốn đầu tư</p>
           <p className="text-lg font-semibold text-gray-900">
-            {formatCurrency(summary.totalPurchaseValue, summary.currency)}
+            {formatCurrency(summary.totalInvestedCost, summary.currency)}
           </p>
         </div>
 
@@ -43,16 +43,16 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
           <p className={`text-lg font-semibold ${summary.totalProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
             {summary.totalProfit >= 0 ? '+' : ''}{formatCurrency(Math.abs(summary.totalProfit), summary.currency)}
           </p>
-          <p className={`text-sm font-bold mt-1 ${summary.profitPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {summary.profitPercentage >= 0 ? '+' : ''}{formatPercentage(summary.profitPercentage)}
+          <p className={`text-sm font-bold mt-1 ${summary.totalProfitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {summary.totalProfitRate >= 0 ? '+' : ''}{formatPercentage(summary.totalProfitRate)}
           </p>
         </div>
 
         {/* ROI */}
         <div className="text-center p-4 bg-blue-50 rounded-xl">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">ROI</p>
-          <p className={`text-lg font-semibold ${summary.profitPercentage >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-            {summary.profitPercentage >= 0 ? '+' : ''}{formatPercentage(summary.profitPercentage)}
+          <p className={`text-lg font-semibold ${summary.totalProfitRate >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+            {summary.totalProfitRate >= 0 ? '+' : ''}{formatPercentage(summary.totalProfitRate)}
           </p>
         </div>
       </div>

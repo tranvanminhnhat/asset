@@ -5,20 +5,12 @@ import { useDashboard } from '../hooks/useDashboard';
 import HeroBanner from '../components/HeroBanner';
 import PortfolioList from '../components/PortfolioList';
 import SummaryBox from '../components/SummaryBox';
-import TransactionForm from '../components/TransactionForm';
-import TransactionHistory from '../components/TransactionHistory';
 
 const DashboardPage: React.FC = () => {
   const {
     dashboardData,
     isLoading,
     error,
-    transactionError,
-    isSubmittingTransaction,
-    selectedPortfolioId,
-    setSelectedPortfolioId,
-    transactions,
-    submitTransaction,
   } = useDashboard();
 
   if (isLoading) {
@@ -67,24 +59,7 @@ const DashboardPage: React.FC = () => {
 
         <SummaryBox summary={dashboardData.summary} />
 
-        {transactionError && hasPortfolios && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            Không thể lưu giao dịch. Vui lòng kiểm tra dữ liệu và thử lại.
-          </div>
-        )}
-
-        {hasPortfolios ? (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr,1.4fr]">
-            <TransactionForm
-              isSubmitting={isSubmittingTransaction}
-              portfolios={dashboardData.portfolios}
-              selectedPortfolioId={selectedPortfolioId}
-              onSelectPortfolio={setSelectedPortfolioId}
-              onSubmit={submitTransaction}
-            />
-            <TransactionHistory transactions={transactions} />
-          </div>
-        ) : (
+        {!hasPortfolios && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
             <h3 className="text-xl font-semibold text-slate-900">Chưa có dữ liệu giao dịch</h3>
             <p className="mt-2 text-slate-600">

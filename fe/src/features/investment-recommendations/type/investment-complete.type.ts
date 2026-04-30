@@ -1,6 +1,7 @@
 export interface InvestmentCompleteAllocation {
   type: string;
   amount: number;
+  quantity: number;
   percent: number;
 }
 
@@ -16,9 +17,8 @@ export interface InvestmentCompleteResponse {
   userId: string;
   type: string;
   totalAmount: number;
-  status: string;
-  recommendationSnapshot: string;
-  note: string;
+  status?: string;
+  recommendationSnapshot?: string | null;
   createdAt: string;
   allocations: InvestmentCompleteAllocation[];
 }
