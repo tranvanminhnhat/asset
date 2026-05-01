@@ -26,6 +26,13 @@ public class InvestmentRecommendationsResponse {
         // allocated amount (currency)
         private BigDecimal amount;
 
+        // Tiền dư kỳ trước
+        private BigDecimal carryOverAmount;
+
+        private BigDecimal investableAmount;
+
+        private BigDecimal residualAmount;
+
         // percent as decimal (e.g. 0.25 for 25%)
         private BigDecimal percent;
     }

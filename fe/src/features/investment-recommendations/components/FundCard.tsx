@@ -43,6 +43,10 @@ const FundCard: React.FC<FundCardProps> = ({ fund }) => {
           </p>
         </div>
         <div>
+          <p className="text-sm text-slate-600">Tiền dư từ phiên trước</p>
+          <p className="text-xl font-bold text-amber-600">{formatCurrency(fund.carryOverAmount)}</p>
+        </div>
+        <div>
           <p className="text-sm text-slate-600">Tỷ lệ phân bổ</p>
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-slate-200 rounded-full h-2">

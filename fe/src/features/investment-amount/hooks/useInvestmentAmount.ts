@@ -120,7 +120,13 @@ export const useInvestmentAmount = () => {
   const submitInvestmentAmount = async (request: InvestmentAmountRequest): Promise<RecommendationResponse | null> => {
     const response = await getRecommendation(request).unwrap();
 
-    return getRecommendationPayload(response);
+    const payload = getRecommendationPayload(response);
+
+    if (!payload) {
+      return null;
+    }
+
+    return payload;
   };
 
   return {

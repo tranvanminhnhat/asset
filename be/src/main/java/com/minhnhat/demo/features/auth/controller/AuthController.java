@@ -28,6 +28,9 @@ import static com.minhnhat.demo.features.auth.constant.AuthConstant.REGISTER_INF
 import static com.minhnhat.demo.features.auth.constant.AuthConstant.LOGOUT_INFO_001;
 import static com.minhnhat.demo.features.auth.constant.AuthConstant.REFRESH_TOKEN_INFO_001;
 
+/**
+ * Auth Controller - Handles user authentication and registration
+ */
 @RestController
 @RequestMapping(value = "/auth")
 @RequiredArgsConstructor

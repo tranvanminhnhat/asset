@@ -14,6 +14,7 @@ export interface FundAllocation {
   name: string;
   type: string;
   unitAmount: number;
+  carryOverAmount: number;
   quantity: number;
   totalAmount: number;
   currency: string;

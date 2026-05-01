@@ -37,6 +37,7 @@ const InvestmentRecommendationsPage: React.FC = () => {
 
   const funds = mapAllocationsToFunds(data.allocations);
   const totalAmount = funds.reduce((sum, fund) => sum + fund.totalAmount, 0);
+  const totalCarryOverAmount = funds.reduce((sum, fund) => sum + fund.carryOverAmount, 0);
   const portfolio = {
     id: '1',
     title: 'Đề xuất Đầu tư Toàn diện',
@@ -88,10 +89,16 @@ const InvestmentRecommendationsPage: React.FC = () => {
         {/* Summary Section */}
         <div className="bg-slate-50 rounded-lg p-8 mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-6">Kế hoạch đầu tư của bạn</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-lg border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Tổng số tiền đầu tư</p>
               <p className="text-3xl font-bold text-slate-900">{formatCurrency(portfolio.totalAmount)}</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-slate-200">
+              <p className="text-sm text-slate-600 mb-2">Tiền dư từ phiên trước</p>
+              <p className="text-3xl font-bold text-slate-900">
+                {formatCurrency(totalCarryOverAmount)}
+              </p>
             </div>
             <div className="bg-white p-6 rounded-lg border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Chiến lược đầu tư</p>

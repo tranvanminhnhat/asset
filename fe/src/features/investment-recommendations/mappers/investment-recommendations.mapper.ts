@@ -1,6 +1,19 @@
 import { Allocation } from '../../investment-amount/type/investment-amount.type';
 import { FundAllocation } from '../type/investment-recommendations.type';
 
+const toNumber = (value: number | string | null | undefined) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value);
+    return Number.isFinite(parsedValue) ? parsedValue : 0;
+  }
+
+  return 0;
+};
+
 const getFundName = (type: string) => {
   switch (type) {
     case 'EMERGENCY': return 'Quỹ Khẩn cấp';
@@ -22,15 +35,20 @@ const getFundDescription = (type: string) => {
 };
 
 export const mapAllocationsToFunds = (allocations: Allocation[]): FundAllocation[] => {
-  return allocations.map((alloc, index) => ({
-    id: (index + 1).toString(),
-    name: getFundName(alloc.type),
-    type: alloc.type,
-    unitAmount: alloc.amount,
-    quantity: alloc.quantity > 0 ? alloc.quantity : 1,
-    totalAmount: alloc.amount * (alloc.quantity > 0 ? alloc.quantity : 1),
-    currency: 'VND',
-    percentage: alloc.percent * 100,
-    description: getFundDescription(alloc.type),
-  }));
+  return allocations.map((alloc, index) => {
+    const quantity = typeof alloc.quantity === 'number' && alloc.quantity > 0 ? alloc.quantity : 1;
+
+    return {
+      id: (index + 1).toString(),
+      name: getFundName(alloc.type),
+      type: alloc.type,
+      unitAmount: toNumber(alloc.amount),
+      carryOverAmount: toNumber(alloc.carryOverAmount),
+      quantity,
+      totalAmount: toNumber(alloc.amount) * quantity,
+      currency: 'VND',
+      percentage: toNumber(alloc.percent) * 100,
+      description: getFundDescription(alloc.type),
+    };
+  });
 };

@@ -9,9 +9,12 @@ export interface InvestmentAmountRequest {
 export interface Allocation {
   type: string;
   amount: number;
-  quantity: number;
+  quantity?: number;
   percent: number;
+  carryOverAmount?: AmountLike;
 }
+
+export type AmountLike = number | string | null;
 
 export interface InvestmentAmountResponse {
   data: RecommendationResponse;
