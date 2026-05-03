@@ -34,6 +34,7 @@ public class InvestmentCompleteResponse {
         private BigDecimal amount;
         private Integer quantity;
         private BigDecimal percent;
+        private BigDecimal residualAmount;
     }
 }
 

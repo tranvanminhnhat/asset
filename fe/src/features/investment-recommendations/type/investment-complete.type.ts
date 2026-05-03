@@ -3,6 +3,7 @@ export interface InvestmentCompleteAllocation {
   amount: number;
   quantity: number;
   percent: number;
+  residualAmount: number;
 }
 
 export interface InvestmentCompleteRequest {

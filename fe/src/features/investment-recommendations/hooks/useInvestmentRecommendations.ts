@@ -44,7 +44,7 @@ export const useInvestmentRecommendations = () => {
     }
 
     const totalAmount = data.allocations.reduce((sum, allocation) => {
-      const quantity = Number.isFinite(allocation.quantity)
+      const quantity = typeof allocation.quantity === 'number' && Number.isFinite(allocation.quantity)
         ? Math.max(1, Math.floor(allocation.quantity))
         : 1;
       return sum + allocation.amount * quantity;
@@ -54,8 +54,14 @@ export const useInvestmentRecommendations = () => {
       amount: totalAmount > 0 ? totalAmount : data.amount,
       type: data.type,
       allocations: data.allocations.map((allocation) => ({
-        ...allocation,
-        quantity: Number.isFinite(allocation.quantity)
+        type: allocation.type,
+        amount: Number.isFinite(allocation.amount) ? allocation.amount : 0,
+        percent: Number.isFinite(allocation.percent) ? allocation.percent : 0,
+        residualAmount:
+          typeof allocation.residualAmount === 'number' && Number.isFinite(allocation.residualAmount)
+            ? allocation.residualAmount
+            : 0,
+        quantity: typeof allocation.quantity === 'number' && Number.isFinite(allocation.quantity)
           ? Math.max(1, Math.floor(allocation.quantity))
           : 1,
       })),

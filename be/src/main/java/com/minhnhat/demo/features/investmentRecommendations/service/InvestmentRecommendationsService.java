@@ -11,6 +11,8 @@ import com.minhnhat.demo.features.master.entity.AllocationStrategyEntity;
 import com.minhnhat.demo.features.master.entity.AllocationStrategyDetailEntity;
 import com.minhnhat.demo.features.master.repository.AllocationStrategyRepository;
 import com.minhnhat.demo.features.master.repository.AllocationStrategyDetailRepository;
+import com.minhnhat.demo.features.portfolio.entity.AssetPriceEntity;
+import com.minhnhat.demo.features.portfolio.repository.AssetPriceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ public class InvestmentRecommendationsService {
     private final AllocationStrategyRepository strategyRepository;
     
     private final AllocationStrategyDetailRepository detailRepository;
+
+    private final AssetPriceRepository assetPriceRepository;
 
     private final AssetResidualsRepository assetResidualsRepository;
     
@@ -94,24 +98,34 @@ public class InvestmentRecommendationsService {
     }
 
     private void executeBusinessLogic(Context ctx) {
-        // Extract percentages from strategy details by asset_type
+        // Extract percentages, minimumLotSizes, and asset prices from strategy details by asset_type
         BigDecimal pEmergency = BigDecimal.ZERO;
         BigDecimal pGold = BigDecimal.ZERO;
         BigDecimal pEtf = BigDecimal.ZERO;
         BigDecimal pStock = BigDecimal.ZERO;
 
+        BigDecimal minLotEmergency = BigDecimal.ZERO;
+        BigDecimal minLotGold = BigDecimal.ZERO;
+        BigDecimal minLotEtf = BigDecimal.ZERO;
+        BigDecimal minLotStock = BigDecimal.ZERO;
+
         for (AllocationStrategyDetailEntity detail : ctx.details) {
             String assetType = detail.getAssetType();
             BigDecimal percentage = nonNull(detail.getPercentage());
+            BigDecimal minimumLotSize = nonNull(detail.getMinimumLotSizeAmount());
             
             if ("EMERGENCY".equalsIgnoreCase(assetType)) {
                 pEmergency = percentage;
+                minLotEmergency = minimumLotSize;
             } else if ("GOLD".equalsIgnoreCase(assetType)) {
                 pGold = percentage;
+                minLotGold = minimumLotSize;
             } else if ("ETF".equalsIgnoreCase(assetType)) {
                 pEtf = percentage;
+                minLotEtf = minimumLotSize;
             } else if ("STOCK".equalsIgnoreCase(assetType)) {
                 pStock = percentage;
+                minLotStock = minimumLotSize;
             }
         }
 
@@ -155,6 +169,18 @@ public class InvestmentRecommendationsService {
             amtEtf = diff.setScale(2, RoundingMode.HALF_UP);
         }
 
+        // Load carry over amounts from AssetResidualsRepository based on user_id and asset_type
+        ctx.carryOverEmergency = loadCarryOverAmount(ctx.userId, "EMERGENCY");
+        ctx.carryOverGold = loadCarryOverAmount(ctx.userId, "GOLD");
+        ctx.carryOverEtf = loadCarryOverAmount(ctx.userId, "ETF");
+        ctx.carryOverStock = loadCarryOverAmount(ctx.userId, "STOCK");
+
+        // Load asset prices from asset_prices table
+        ctx.priceEmergency = loadAssetPrice("EMERGENCY");
+        ctx.priceGold = loadAssetPrice("GOLD");
+        ctx.priceEtf = loadAssetPrice("ETF");
+        ctx.priceStock = loadAssetPrice("STOCK");
+
         ctx.percentEmergency = pEmergency;
         ctx.percentGold = pGold;
         ctx.percentEtf = pEtf;
@@ -165,11 +191,16 @@ public class InvestmentRecommendationsService {
         ctx.amountEtf = amtEtf;
         ctx.amountStock = amtStock;
 
-        // Load carry over amounts from AssetResidualsRepository based on user_id and asset_type
-        ctx.carryOverEmergency = loadCarryOverAmount(ctx.userId, "EMERGENCY");
-        ctx.carryOverGold = loadCarryOverAmount(ctx.userId, "GOLD");
-        ctx.carryOverEtf = loadCarryOverAmount(ctx.userId, "ETF");
-        ctx.carryOverStock = loadCarryOverAmount(ctx.userId, "STOCK");
+        ctx.minimumLotEmergency = minLotEmergency;
+        ctx.minimumLotGold = minLotGold;
+        ctx.minimumLotEtf = minLotEtf;
+        ctx.minimumLotStock = minLotStock;
+
+        // Calculate investable and residual amounts
+        calculateInvestableAndResidual(ctx, "EMERGENCY");
+        calculateInvestableAndResidual(ctx, "GOLD");
+        calculateInvestableAndResidual(ctx, "ETF");
+        calculateInvestableAndResidual(ctx, "STOCK");
     }
 
     private InvestmentRecommendationsResponse createResponse(Context ctx) {
@@ -180,24 +211,32 @@ public class InvestmentRecommendationsService {
                 .percent(strip(ctx.percentEmergency))
                 .amount(strip(ctx.amountEmergency))
                 .carryOverAmount(strip(ctx.carryOverEmergency))
+                .investableAmount(strip(ctx.investableEmergency))
+                .residualAmount(strip(ctx.residualEmergency))
                 .build());
         allocations.add(InvestmentRecommendationsResponse.Allocation.builder()
                 .type("GOLD")
                 .percent(strip(ctx.percentGold))
                 .amount(strip(ctx.amountGold))
                 .carryOverAmount(strip(ctx.carryOverGold))
+                .investableAmount(strip(ctx.investableGold))
+                .residualAmount(strip(ctx.residualGold))
                 .build());
         allocations.add(InvestmentRecommendationsResponse.Allocation.builder()
                 .type("ETF")
                 .percent(strip(ctx.percentEtf))
                 .amount(strip(ctx.amountEtf))
                 .carryOverAmount(strip(ctx.carryOverEtf))
+                .investableAmount(strip(ctx.investableEtf))
+                .residualAmount(strip(ctx.residualEtf))
                 .build());
         allocations.add(InvestmentRecommendationsResponse.Allocation.builder()
                 .type("STOCK")
                 .percent(strip(ctx.percentStock))
                 .amount(strip(ctx.amountStock))
                 .carryOverAmount(strip(ctx.carryOverStock))
+                .investableAmount(strip(ctx.investableStock))
+                .residualAmount(strip(ctx.residualStock))
                 .build());
 
         log.info("Allocation computed from master type={} total={} => sumPercents={} sumAmounts={}", ctx.code, ctx.request.getAmount(), ctx.percentEmergency.add(ctx.percentGold).add(ctx.percentEtf).add(ctx.percentStock), ctx.amountEmergency.add(ctx.amountGold).add(ctx.amountEtf).add(ctx.amountStock));
@@ -228,10 +267,138 @@ public class InvestmentRecommendationsService {
         BigDecimal carryOverGold;
         BigDecimal carryOverEtf;
         BigDecimal carryOverStock;
+
+        // Minimum lot size amounts for each asset type
+        BigDecimal minimumLotEmergency;
+        BigDecimal minimumLotGold;
+        BigDecimal minimumLotEtf;
+        BigDecimal minimumLotStock;
+
+        // Asset prices for each type
+        BigDecimal priceEmergency;
+        BigDecimal priceGold;
+        BigDecimal priceEtf;
+        BigDecimal priceStock;
+
+        // Calculated investable and residual amounts
+        BigDecimal investableEmergency;
+        BigDecimal investableGold;
+        BigDecimal investableEtf;
+        BigDecimal investableStock;
+
+        BigDecimal residualEmergency;
+        BigDecimal residualGold;
+        BigDecimal residualEtf;
+        BigDecimal residualStock;
     }
 
     private BigDecimal nonNull(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
+    }
+
+    /**
+     * Tính investableAmount và residualAmount dựa vào minimumLotSizeAmount và giá tài sản
+     * Logic:
+     * - totalAmount = amount + carryOverAmount
+     * - minimumAmount = minimumLotSizeAmount * price
+     * - Nếu totalAmount < minimumAmount: investable = 0, residual = totalAmount
+     * - Nếu totalAmount >= minimumAmount: số lần đầu tư = floor(totalAmount / minimumAmount)
+     *   investable = số lần * minimumAmount, residual = totalAmount - investable
+     */
+    private void calculateInvestableAndResidual(Context ctx, String assetType) {
+        BigDecimal amount = BigDecimal.ZERO;
+        BigDecimal carryOver = BigDecimal.ZERO;
+        BigDecimal minimumLot = BigDecimal.ZERO;
+        BigDecimal price = BigDecimal.ZERO;
+
+        switch (assetType.toUpperCase()) {
+            case "EMERGENCY":
+                amount = ctx.amountEmergency;
+                carryOver = ctx.carryOverEmergency;
+                minimumLot = ctx.minimumLotEmergency;
+                price = ctx.priceEmergency;
+                break;
+            case "GOLD":
+                amount = ctx.amountGold;
+                carryOver = ctx.carryOverGold;
+                minimumLot = ctx.minimumLotGold;
+                price = ctx.priceGold;
+                break;
+            case "ETF":
+                amount = ctx.amountEtf;
+                carryOver = ctx.carryOverEtf;
+                minimumLot = ctx.minimumLotEtf;
+                price = ctx.priceEtf;
+                break;
+            case "STOCK":
+                amount = ctx.amountStock;
+                carryOver = ctx.carryOverStock;
+                minimumLot = ctx.minimumLotStock;
+                price = ctx.priceStock;
+                break;
+        }
+
+        // Kiểm tra null
+        amount = nonNull(amount);
+        carryOver = nonNull(carryOver);
+        minimumLot = nonNull(minimumLot);
+        price = nonNull(price);
+
+        // Tổng tiền có thể đầu tư = amount hiện tại + số tiền dư từ kỳ trước
+        BigDecimal totalAmount = amount.add(carryOver);
+
+        // Tính tiền tối thiểu cần để đầu tư
+        BigDecimal minimumAmount = minimumLot.multiply(price).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal investable = BigDecimal.ZERO;
+        BigDecimal residual = totalAmount; // Mặc định: tất cả là dư nếu không đủ tối thiểu
+
+        if (totalAmount.compareTo(minimumAmount) >= 0) {
+            // Tính số lần có thể đầu tư (lấy phần nguyên)
+            BigDecimal times = totalAmount.divide(minimumAmount, 0, RoundingMode.DOWN);
+            investable = times.multiply(minimumAmount).setScale(2, RoundingMode.HALF_UP);
+            residual = totalAmount.subtract(investable).setScale(2, RoundingMode.HALF_UP);
+
+            log.info("Asset type {} calculated: totalAmount={}, minimumAmount={}, investable={}, residual={}", 
+                assetType, totalAmount, minimumAmount, investable, residual);
+        } else {
+            log.warn("Asset type {} insufficient amount: totalAmount={} < minimumAmount={}, all to residual", 
+                assetType, totalAmount, minimumAmount);
+        }
+
+        // Lưu kết quả vào Context
+        switch (assetType.toUpperCase()) {
+            case "EMERGENCY":
+                ctx.investableEmergency = investable;
+                ctx.residualEmergency = residual;
+                break;
+            case "GOLD":
+                ctx.investableGold = investable;
+                ctx.residualGold = residual;
+                break;
+            case "ETF":
+                ctx.investableEtf = investable;
+                ctx.residualEtf = residual;
+                break;
+            case "STOCK":
+                ctx.investableStock = investable;
+                ctx.residualStock = residual;
+                break;
+        }
+    }
+
+    /**
+     * Lấy giá tài sản từ asset_prices table
+     */
+    private BigDecimal loadAssetPrice(String assetType) {
+        try {
+            return assetPriceRepository.findById(assetType)
+                    .map(AssetPriceEntity::getPrice)
+                    .orElse(BigDecimal.ZERO);
+        } catch (Exception e) {
+            log.warn("Error loading asset price for assetType={}: {}", assetType, e.getMessage());
+            return BigDecimal.ZERO;
+        }
     }
 
     private BigDecimal loadCarryOverAmount(String userId, String assetType) {

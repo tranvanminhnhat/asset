@@ -13,6 +13,9 @@ export interface FundAllocation {
   id: string;
   name: string;
   type: string;
+  amount: number;
+  investableAmount: number;
+  residualAmount: number;
   unitAmount: number;
   carryOverAmount: number;
   quantity: number;

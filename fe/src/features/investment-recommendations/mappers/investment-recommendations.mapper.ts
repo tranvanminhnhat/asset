@@ -37,15 +37,22 @@ const getFundDescription = (type: string) => {
 export const mapAllocationsToFunds = (allocations: Allocation[]): FundAllocation[] => {
   return allocations.map((alloc, index) => {
     const quantity = typeof alloc.quantity === 'number' && alloc.quantity > 0 ? alloc.quantity : 1;
+    const amount = toNumber(alloc.amount);
+    const carryOverAmount = toNumber(alloc.carryOverAmount);
+    const investableAmount = toNumber(alloc.investableAmount);
+    const residualAmount = toNumber(alloc.residualAmount);
 
     return {
       id: (index + 1).toString(),
       name: getFundName(alloc.type),
       type: alloc.type,
-      unitAmount: toNumber(alloc.amount),
-      carryOverAmount: toNumber(alloc.carryOverAmount),
+      amount,
+      investableAmount,
+      residualAmount,
+      unitAmount: amount,
+      carryOverAmount,
       quantity,
-      totalAmount: toNumber(alloc.amount) * quantity,
+      totalAmount: investableAmount,
       currency: 'VND',
       percentage: toNumber(alloc.percent) * 100,
       description: getFundDescription(alloc.type),

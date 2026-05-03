@@ -12,6 +12,8 @@ export interface Allocation {
   quantity?: number;
   percent: number;
   carryOverAmount?: AmountLike;
+  investableAmount?: AmountLike;
+  residualAmount?: AmountLike;
 }
 
 export type AmountLike = number | string | null;

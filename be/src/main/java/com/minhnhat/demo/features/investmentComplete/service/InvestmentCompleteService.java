@@ -8,12 +8,16 @@ import com.minhnhat.demo.features.investmentComplete.entity.InvestmentPlanAlloca
 import com.minhnhat.demo.features.investmentComplete.entity.InvestmentPlanEntity;
 import com.minhnhat.demo.features.investmentComplete.repository.InvestmentPlanAllocationRepository;
 import com.minhnhat.demo.features.investmentComplete.repository.InvestmentPlanRepository;
+import com.minhnhat.demo.features.investmentRecommendations.entity.AssetResidualsEntity;
+import com.minhnhat.demo.features.investmentRecommendations.repository.AssetResidualsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -23,6 +27,7 @@ public class InvestmentCompleteService {
 
     private final InvestmentPlanRepository planRepository;
     private final InvestmentPlanAllocationRepository allocationRepository;
+    private final AssetResidualsRepository assetResidualsRepository;
     private final SecurityUtils securityUtils;
     private final ObjectMapper objectMapper;
 
@@ -65,13 +70,41 @@ public class InvestmentCompleteService {
 
         allocationRepository.saveAll(allocEntities);
 
-        List<InvestmentCompleteResponse.Allocation> allocations = allocEntities.stream()
-                .map(e -> InvestmentCompleteResponse.Allocation.builder()
-                        .type(e.getAssetType())
-                        .amount(e.getAmount())
-                        .quantity(e.getQuantity())
-                        .percent(e.getPercentage())
-                        .build())
+        String finalUserId = userId;
+        List<InvestmentCompleteResponse.Allocation> allocations = request.getAllocations().stream()
+                .map(e -> {
+                    // Get or create residual amount from AssetResidualsEntity
+                    BigDecimal residualAmount = e.getResidualAmount();
+                    Optional<AssetResidualsEntity> residualOpt = assetResidualsRepository.findByUserIdAndAssetType(
+                            finalUserId, e.getType());
+                    
+                    if (residualOpt.isPresent()) {
+                        // Update existing residual
+                        AssetResidualsEntity residual = residualOpt.get();
+                        residual.setResidualAmount(residualAmount);
+                        assetResidualsRepository.save(residual);
+                        log.info("Updated asset residual: userId={}, assetType={}, residualAmount={}", 
+                            finalUserId, e.getType(), residualAmount);
+                    } else {
+                        // Create new residual record
+                        AssetResidualsEntity newResidual = AssetResidualsEntity.builder()
+                                .userId(finalUserId)
+                                .assetType(e.getType())
+                                .residualAmount(residualAmount)
+                                .build();
+                        assetResidualsRepository.save(newResidual);
+                        log.info("Created new asset residual: userId={}, assetType={}, residualAmount={}", 
+                            finalUserId, e.getType(), residualAmount);
+                    }
+
+                    return InvestmentCompleteResponse.Allocation.builder()
+                            .type(e.getType())
+                            .amount(e.getAmount())
+                            .quantity(e.getQuantity())
+                            .percent(e.getPercent())
+                            .residualAmount(residualAmount)
+                            .build();
+                })
                 .toList();
 
         return InvestmentCompleteResponse.builder()

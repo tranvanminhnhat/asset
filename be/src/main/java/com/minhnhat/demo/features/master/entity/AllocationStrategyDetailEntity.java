@@ -36,7 +36,7 @@ public class AllocationStrategyDetailEntity extends BaseEntity {
     @Column(name = "strategy_code", length = 45, nullable = false)
     private String strategyCode;
 
-    @Column(name = "mini_lot_size_amount", precision = 5, scale = 2, nullable = false)
-    private String minimumLotSizeAmount;
+    @Column(name = "minimum_lot_size_amount", precision = 19, scale = 6, nullable = false)
+    private BigDecimal minimumLotSizeAmount;
 }
 

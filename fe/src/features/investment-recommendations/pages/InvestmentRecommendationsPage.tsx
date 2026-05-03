@@ -37,7 +37,9 @@ const InvestmentRecommendationsPage: React.FC = () => {
 
   const funds = mapAllocationsToFunds(data.allocations);
   const totalAmount = funds.reduce((sum, fund) => sum + fund.totalAmount, 0);
+  const totalSessionAmount = funds.reduce((sum, fund) => sum + fund.amount, 0);
   const totalCarryOverAmount = funds.reduce((sum, fund) => sum + fund.carryOverAmount, 0);
+  const totalResidualAmount = funds.reduce((sum, fund) => sum + fund.residualAmount, 0);
   const portfolio = {
     id: '1',
     title: 'Đề xuất Đầu tư Toàn diện',
@@ -89,9 +91,13 @@ const InvestmentRecommendationsPage: React.FC = () => {
         {/* Summary Section */}
         <div className="bg-slate-50 rounded-lg p-8 mb-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-6">Kế hoạch đầu tư của bạn</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
             <div className="bg-white p-6 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-600 mb-2">Tổng số tiền đầu tư</p>
+              <p className="text-sm text-slate-600 mb-2">Tổng tiền chia phiên này</p>
+              <p className="text-3xl font-bold text-slate-900">{formatCurrency(totalSessionAmount)}</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-slate-200">
+              <p className="text-sm text-slate-600 mb-2">Tổng tiền có thể đầu tư</p>
               <p className="text-3xl font-bold text-slate-900">{formatCurrency(portfolio.totalAmount)}</p>
             </div>
             <div className="bg-white p-6 rounded-lg border border-slate-200">
@@ -101,12 +107,14 @@ const InvestmentRecommendationsPage: React.FC = () => {
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-600 mb-2">Chiến lược đầu tư</p>
-              <p className="text-2xl font-bold text-emerald-600">{portfolio.investmentStrategy}</p>
+              <p className="text-sm text-slate-600 mb-2">Tiền dư phiên này</p>
+              <p className="text-3xl font-bold text-slate-900">
+                {formatCurrency(totalResidualAmount)}
+              </p>
             </div>
             <div className="bg-white p-6 rounded-lg border border-slate-200">
-              <p className="text-sm text-slate-600 mb-2">Số quỹ</p>
-              <p className="text-3xl font-bold text-slate-900">{portfolio.funds.length}</p>
+              <p className="text-sm text-slate-600 mb-2">Chiến lược đầu tư</p>
+              <p className="text-2xl font-bold text-emerald-600">{portfolio.investmentStrategy}</p>
             </div>
           </div>
         </div>

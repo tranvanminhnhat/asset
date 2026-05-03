@@ -35,4 +35,6 @@ spring:
 app:
   frontend:
     login-url: http://localhost:3000/login
-
+  api:
+    sjc:
+      price-url: https://sjc.com.vn/GoldPrice/Services/PriceService.ashx
