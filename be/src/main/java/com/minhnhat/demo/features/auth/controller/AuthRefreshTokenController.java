@@ -4,7 +4,7 @@ import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.common.config.MessageService;
 import com.minhnhat.demo.features.auth.dto.request.RefreshTokenRequest;
 import com.minhnhat.demo.features.auth.dto.response.RefreshTokenResponse;
-import com.minhnhat.demo.features.auth.service.AuthService;
+import com.minhnhat.demo.features.auth.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,7 +18,7 @@ import static com.minhnhat.demo.features.auth.constant.AuthConstant.REFRESH_TOKE
 @RequiredArgsConstructor
 public class AuthRefreshTokenController {
 
-    private final AuthService authService;
+    private final RefreshTokenService refreshTokenService;
     private final MessageService messageService;
 
     private static final String SERVICE_NAME = "AuthService";
@@ -26,7 +26,7 @@ public class AuthRefreshTokenController {
     @PostMapping("/refresh-token")
     public ApiResponse<RefreshTokenResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         return ApiResponse.<RefreshTokenResponse>builder()
-                .data(authService.refreshToken(request))
+                .data(refreshTokenService.execute(request))
                 .message(REFRESH_TOKEN_INFO_001, messageService.get(REFRESH_TOKEN_INFO_001), SERVICE_NAME)
                 .build();
     }

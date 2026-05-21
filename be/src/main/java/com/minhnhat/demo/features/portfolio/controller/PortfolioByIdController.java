@@ -2,8 +2,7 @@ package com.minhnhat.demo.features.portfolio.controller;
 
 import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.features.portfolio.dto.response.PortfolioSummaryResponse;
-import com.minhnhat.demo.common.db.entity.PortfolioEntity;
-import com.minhnhat.demo.features.portfolio.service.PortfolioService;
+import com.minhnhat.demo.features.portfolio.service.GetPortfolioByIdService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,29 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class PortfolioByIdController {
 
-    private final PortfolioService portfolioService;
+    private final GetPortfolioByIdService getPortfolioByIdService;
 
     @GetMapping("/{portfolioId}")
     public ApiResponse<PortfolioSummaryResponse> getPortfolio(@PathVariable Long portfolioId) {
         log.info("Fetching portfolio: {}", portfolioId);
 
-        PortfolioEntity portfolio = portfolioService.getPortfolioById(portfolioId)
+        PortfolioSummaryResponse portfolio = getPortfolioByIdService.execute(portfolioId)
                 .orElseThrow(() -> new RuntimeException("Portfolio not found"));
 
         return ApiResponse.<PortfolioSummaryResponse>builder()
-                .data(mapToSummaryResponse(portfolio))
+                .data(portfolio)
                 .message("SUCCESS", "Portfolio retrieved", "PortfolioService")
-                .build();
-    }
-
-    private PortfolioSummaryResponse mapToSummaryResponse(PortfolioEntity entity) {
-        return PortfolioSummaryResponse.builder()
-                .portfolioId(entity.getId())
-                .assetType(entity.getAssetType())
-                .quantity(entity.getQuantity())
-                .totalInvested(entity.getTotalInvested())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 }

@@ -3,7 +3,7 @@ package com.minhnhat.demo.features.dashboard.controller;
 import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.common.config.MessageService;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
-import com.minhnhat.demo.features.dashboard.service.IDashboardService;
+import com.minhnhat.demo.features.dashboard.service.GetDashboardByUserIdService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,12 +18,12 @@ import static com.minhnhat.demo.features.dashboard.constant.DashboardConstant.SE
 @RequiredArgsConstructor
 public class DashboardByUserIdController {
 
-    private final IDashboardService dashboardService;
+    private final GetDashboardByUserIdService getDashboardByUserIdService;
     private final MessageService messageService;
 
     @GetMapping("/{userId}")
     public ApiResponse<DashboardResponse> getDashboardByUserId(@PathVariable String userId) {
-        DashboardResponse data = dashboardService.getDashboardByUserId(userId);
+        DashboardResponse data = getDashboardByUserIdService.execute(userId);
 
         return ApiResponse.<DashboardResponse>builder()
                 .data(data)

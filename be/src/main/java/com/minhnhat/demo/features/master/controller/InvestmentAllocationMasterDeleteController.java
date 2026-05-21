@@ -2,7 +2,7 @@ package com.minhnhat.demo.features.master.controller;
 
 import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.common.config.MessageService;
-import com.minhnhat.demo.features.master.service.InvestmentAllocationMasterService;
+import com.minhnhat.demo.features.master.service.DeleteInvestmentAllocationMasterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,12 +17,12 @@ import static com.minhnhat.demo.features.master.constant.InvestmentAllocationMas
 @RequiredArgsConstructor
 public class InvestmentAllocationMasterDeleteController {
 
-    private final InvestmentAllocationMasterService investmentAllocationMasterService;
+    private final DeleteInvestmentAllocationMasterService deleteInvestmentAllocationMasterService;
     private final MessageService messageService;
 
     @DeleteMapping("/{code}")
     public ApiResponse<Void> delete(@PathVariable String code) {
-        investmentAllocationMasterService.delete(code);
+        deleteInvestmentAllocationMasterService.execute(code);
         return ApiResponse.<Void>builder()
                 .message(DELETE_INFO_001, messageService.get(DELETE_INFO_001), SERVICE_NAME)
                 .build();

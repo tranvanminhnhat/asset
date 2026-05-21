@@ -3,7 +3,7 @@ package com.minhnhat.demo.features.auth.controller;
 import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.common.config.MessageService;
 import com.minhnhat.demo.features.auth.dto.response.LogoutResponse;
-import com.minhnhat.demo.features.auth.service.AuthService;
+import com.minhnhat.demo.features.auth.service.LogoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +16,7 @@ import static com.minhnhat.demo.features.auth.constant.AuthConstant.LOGOUT_INFO_
 @RequiredArgsConstructor
 public class AuthLogoutController {
 
-    private final AuthService authService;
+    private final LogoutService logoutService;
     private final MessageService messageService;
 
     private static final String SERVICE_NAME = "AuthService";
@@ -24,7 +24,7 @@ public class AuthLogoutController {
     @PostMapping("/logout")
     public ApiResponse<LogoutResponse> logout() {
         return ApiResponse.<LogoutResponse>builder()
-                .data(authService.logout())
+                .data(logoutService.execute())
                 .message(LOGOUT_INFO_001, messageService.get(LOGOUT_INFO_001), SERVICE_NAME)
                 .build();
     }

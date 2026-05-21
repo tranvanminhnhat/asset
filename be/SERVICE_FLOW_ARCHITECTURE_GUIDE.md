@@ -75,12 +75,15 @@ private void processBusiness(Context ctx) {
 - Name public method consistently as `execute(...)` where possible.
 - If a feature has multiple APIs, split into multiple service classes (one use-case per service).
 - Split controllers accordingly so each controller handles a focused API set.
+- One API endpoint must map to one dedicated controller class and one dedicated service class.
+- Do not let multiple API endpoints share the same feature service class.
+- A feature controller must call its matching dedicated service directly, not a shared feature service.
 - Keep all services/controllers inside the same feature folder cluster.
 - Do not move feature code into unrelated packages.
 
 ## Data Layer Placement
-- All JPA entities must be placed under `src/main/java/com/minhnhat/demo/db/entity`.
-- All repositories must be placed under `src/main/java/com/minhnhat/demo/db/repository`.
+- All JPA entities must be placed under `src/main/java/com/minhnhat/demo/common/db/entity`.
+- All repositories must be placed under `src/main/java/com/minhnhat/demo/common/db/repository`.
 - Feature services/controllers import from centralized `db` packages instead of feature-local entity/repository packages.
 - If multiple features need methods for the same entity, keep one repository for that entity and merge methods into it.
 

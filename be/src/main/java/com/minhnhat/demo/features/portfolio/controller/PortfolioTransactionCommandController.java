@@ -5,8 +5,7 @@ import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
 import com.minhnhat.demo.features.portfolio.dto.request.AddTransactionRequest;
 import com.minhnhat.demo.features.portfolio.dto.response.PortfolioTransactionResponse;
-import com.minhnhat.demo.common.db.entity.PortfolioTransactionEntity;
-import com.minhnhat.demo.features.portfolio.service.PortfolioService;
+import com.minhnhat.demo.features.portfolio.service.AddPortfolioTransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class PortfolioTransactionCommandController {
 
-    private final PortfolioService portfolioService;
+    private final AddPortfolioTransactionService addPortfolioTransactionService;
     private final SecurityUtils securityUtils;
 
     @PostMapping("/transactions")
@@ -28,7 +27,7 @@ public class PortfolioTransactionCommandController {
         log.info("Adding transaction for asset: {}", request.getAssetType());
 
         CurrentUserInfo user = securityUtils.getCurrentUser();
-        PortfolioTransactionEntity transaction = portfolioService.addTransaction(
+        PortfolioTransactionResponse transaction = addPortfolioTransactionService.execute(
                 user.getUserId(),
                 request.getTransactionType(),
                 request.getAssetType(),
@@ -42,24 +41,8 @@ public class PortfolioTransactionCommandController {
         );
 
         return ApiResponse.<PortfolioTransactionResponse>builder()
-                .data(mapToTransactionResponse(transaction))
+                .data(transaction)
                 .message("SUCCESS", "Transaction recorded", "PortfolioService")
-                .build();
-    }
-
-    private PortfolioTransactionResponse mapToTransactionResponse(PortfolioTransactionEntity entity) {
-        return PortfolioTransactionResponse.builder()
-                .transactionId(entity.getId())
-                .transactionType(entity.getTransactionType())
-                .assetType(entity.getAssetType())
-                .quantity(entity.getQuantity())
-                .price(entity.getPrice())
-                .totalAmount(entity.getTotalAmount())
-                .fee(entity.getFee())
-                .tax(entity.getTax())
-                .referenceId(entity.getReferenceId())
-                .note(entity.getNote())
-                .createdAt(entity.getCreatedAt())
                 .build();
     }
 }

@@ -3,7 +3,7 @@ package com.minhnhat.demo.features.dashboard.controller;
 import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.common.config.MessageService;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
-import com.minhnhat.demo.features.dashboard.service.IDashboardService;
+import com.minhnhat.demo.features.dashboard.service.GetCurrentUserDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +23,7 @@ import static com.minhnhat.demo.features.dashboard.constant.DashboardConstant.SE
 @RequiredArgsConstructor
 public class DashboardController {
 
-    private final IDashboardService dashboardService;
+    private final GetCurrentUserDashboardService getCurrentUserDashboardService;
     private final MessageService messageService;
 
     /**
@@ -37,7 +37,7 @@ public class DashboardController {
      */
     @GetMapping
     public ApiResponse<DashboardResponse> getDashboard() {
-        DashboardResponse data = dashboardService.getDashboard();
+        DashboardResponse data = getCurrentUserDashboardService.execute();
 
         return ApiResponse.<DashboardResponse>builder()
                 .data(data)

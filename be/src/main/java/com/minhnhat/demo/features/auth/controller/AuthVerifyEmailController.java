@@ -1,7 +1,7 @@
 package com.minhnhat.demo.features.auth.controller;
 
 import com.minhnhat.demo.common.exception.LogicException;
-import com.minhnhat.demo.features.auth.service.AuthService;
+import com.minhnhat.demo.features.auth.service.VerifyEmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthVerifyEmailController {
 
-    private final AuthService authService;
+    private final VerifyEmailService verifyEmailService;
 
     @Value("${app.frontend.login-url:http://localhost:3000/login}")
     private String frontendLoginUrl;
@@ -25,7 +25,7 @@ public class AuthVerifyEmailController {
     @GetMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token) {
         try {
-            authService.verifyEmail(token);
+            verifyEmailService.execute(token);
             String redirect = frontendLoginUrl + "?verified=true";
             return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, redirect).build();
         } catch (LogicException ex) {

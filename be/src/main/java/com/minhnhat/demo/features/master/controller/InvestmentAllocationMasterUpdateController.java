@@ -4,7 +4,7 @@ import com.minhnhat.demo.common.base.response.ApiResponse;
 import com.minhnhat.demo.common.config.MessageService;
 import com.minhnhat.demo.features.master.dto.request.InvestmentAllocationMasterUpdateRequest;
 import com.minhnhat.demo.features.master.dto.response.InvestmentAllocationMasterResponse;
-import com.minhnhat.demo.features.master.service.InvestmentAllocationMasterService;
+import com.minhnhat.demo.features.master.service.UpdateInvestmentAllocationMasterService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +21,7 @@ import static com.minhnhat.demo.features.master.constant.InvestmentAllocationMas
 @RequiredArgsConstructor
 public class InvestmentAllocationMasterUpdateController {
 
-    private final InvestmentAllocationMasterService investmentAllocationMasterService;
+    private final UpdateInvestmentAllocationMasterService updateInvestmentAllocationMasterService;
     private final MessageService messageService;
 
     @PutMapping("/{code}")
@@ -29,7 +29,7 @@ public class InvestmentAllocationMasterUpdateController {
             @PathVariable String code,
             @Valid @RequestBody InvestmentAllocationMasterUpdateRequest request) {
         return ApiResponse.<InvestmentAllocationMasterResponse>builder()
-                .data(investmentAllocationMasterService.update(code, request))
+                .data(updateInvestmentAllocationMasterService.execute(code, request))
                 .message(UPDATE_INFO_001, messageService.get(UPDATE_INFO_001), SERVICE_NAME)
                 .build();
     }

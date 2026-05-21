@@ -4,6 +4,7 @@ import com.minhnhat.demo.common.db.entity.PortfolioEntity;
 import com.minhnhat.demo.common.db.entity.PortfolioTransactionEntity;
 import com.minhnhat.demo.common.db.repository.PortfolioRepository;
 import com.minhnhat.demo.common.db.repository.PortfolioTransactionRepository;
+import com.minhnhat.demo.features.portfolio.dto.response.PortfolioTransactionResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,66 +12,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Optional;
 
-/**
- * Portfolio Service - Business logic for portfolio management
- * Handles:
- * - Portfolio CRUD operations
- * - Portfolio summaries
- * - Transaction recording (append-only)
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PortfolioService {
+public class AddPortfolioTransactionService {
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioTransactionRepository transactionRepository;
 
-    /**
-     * Get portfolio by ID
-     */
-    @Transactional(readOnly = true)
-    public Optional<PortfolioEntity> getPortfolioById(Long portfolioId) {
-        log.debug("Fetching portfolio with ID: {}", portfolioId);
-        return portfolioRepository.findById(portfolioId);
-    }
-
-    /**
-     * Get all portfolios for a user
-     */
-    @Transactional(readOnly = true)
-    public List<PortfolioEntity> getUserPortfolios(String userId) {
-        log.debug("Fetching portfolios for user: {}", userId);
-        return portfolioRepository.findByUserId(userId);
-    }
-
-    /**
-     * Get or create portfolio for user and asset type
-     */
-    @Transactional
-    public PortfolioEntity getOrCreatePortfolio(String userId, String assetType) {
-        return portfolioRepository.findByUserIdAndAssetType(userId, assetType)
-                .orElseGet(() -> {
-                    log.info("Creating new portfolio for user: {}, assetType: {}", userId, assetType);
-                    PortfolioEntity portfolio = PortfolioEntity.builder()
-                            .userId(userId)
-                            .assetType(assetType)
-                            .quantity(BigDecimal.ZERO)
-                            .totalInvested(BigDecimal.ZERO)
-                            .build();
-                    return portfolioRepository.save(portfolio);
-                });
-    }
-
-    /**
-     * Add transaction to portfolio (append-only)
-     * Updates portfolio quantity and totalInvested after recording transaction
-     */
     @Transactional(rollbackFor = Exception.class)
-    public PortfolioTransactionEntity addTransaction(
+    public PortfolioTransactionResponse execute(
             String userId,
             String transactionType,
             String assetType,
@@ -81,7 +33,7 @@ public class PortfolioService {
             BigDecimal tax,
             String referenceId,
             String note) {
-        AddTransactionContext ctx = new AddTransactionContext(
+        Context ctx = new Context(
                 userId,
                 transactionType,
                 assetType,
@@ -93,23 +45,32 @@ public class PortfolioService {
                 referenceId,
                 note
         );
-
         validateRequest(ctx);
         loadData(ctx);
         processBusiness(ctx);
         return createResponse(ctx);
     }
 
-    private void validateRequest(AddTransactionContext ctx) {
+    private void validateRequest(Context ctx) {
         log.info("Recording transaction - User: {}, Type: {}, Asset: {}, Qty: {}, Price: {}",
                 ctx.userId, ctx.transactionType, ctx.assetType, ctx.quantity, ctx.price);
     }
 
-    private void loadData(AddTransactionContext ctx) {
-        ctx.portfolio = getOrCreatePortfolio(ctx.userId, ctx.assetType);
+    private void loadData(Context ctx) {
+        ctx.portfolio = portfolioRepository.findByUserIdAndAssetType(ctx.userId, ctx.assetType)
+                .orElseGet(() -> {
+                    log.info("Creating new portfolio for user: {}, assetType: {}", ctx.userId, ctx.assetType);
+                    PortfolioEntity portfolio = PortfolioEntity.builder()
+                            .userId(ctx.userId)
+                            .assetType(ctx.assetType)
+                            .quantity(BigDecimal.ZERO)
+                            .totalInvested(BigDecimal.ZERO)
+                            .build();
+                    return portfolioRepository.save(portfolio);
+                });
     }
 
-    private void processBusiness(AddTransactionContext ctx) {
+    private void processBusiness(Context ctx) {
         validateBusiness(ctx);
         prepare(ctx);
         execute(ctx);
@@ -117,11 +78,11 @@ public class PortfolioService {
         afterProcess(ctx);
     }
 
-    private void validateBusiness(AddTransactionContext ctx) {
-        // Keep behavior unchanged: no additional validation in current flow.
+    private void validateBusiness(Context ctx) {
+        // Keep behavior unchanged.
     }
 
-    private void prepare(AddTransactionContext ctx) {
+    private void prepare(Context ctx) {
         ctx.transaction = PortfolioTransactionEntity.builder()
                 .userId(ctx.userId)
                 .transactionType(ctx.transactionType)
@@ -136,7 +97,7 @@ public class PortfolioService {
                 .build();
     }
 
-    private void execute(AddTransactionContext ctx) {
+    private void execute(Context ctx) {
         if ("BUY".equals(ctx.transactionType)) {
             ctx.portfolio.setQuantity(ctx.portfolio.getQuantity().add(ctx.quantity));
             ctx.portfolio.setTotalInvested(ctx.portfolio.getTotalInvested().add(ctx.totalAmount));
@@ -151,39 +112,33 @@ public class PortfolioService {
         }
     }
 
-    private void persist(AddTransactionContext ctx) {
+    private void persist(Context ctx) {
         ctx.savedTransaction = transactionRepository.save(ctx.transaction);
         portfolioRepository.save(ctx.portfolio);
     }
 
-    private void afterProcess(AddTransactionContext ctx) {
+    private void afterProcess(Context ctx) {
         log.info("Transaction recorded with ID: {}", ctx.savedTransaction.getId());
         log.info("Portfolio {} updated", ctx.portfolio.getId());
     }
 
-    private PortfolioTransactionEntity createResponse(AddTransactionContext ctx) {
-        return ctx.savedTransaction;
+    private PortfolioTransactionResponse createResponse(Context ctx) {
+        return PortfolioTransactionResponse.builder()
+                .transactionId(ctx.savedTransaction.getId())
+                .transactionType(ctx.savedTransaction.getTransactionType())
+                .assetType(ctx.savedTransaction.getAssetType())
+                .quantity(ctx.savedTransaction.getQuantity())
+                .price(ctx.savedTransaction.getPrice())
+                .totalAmount(ctx.savedTransaction.getTotalAmount())
+                .fee(ctx.savedTransaction.getFee())
+                .tax(ctx.savedTransaction.getTax())
+                .referenceId(ctx.savedTransaction.getReferenceId())
+                .note(ctx.savedTransaction.getNote())
+                .createdAt(ctx.savedTransaction.getCreatedAt())
+                .build();
     }
 
-    /**
-     * Get transaction history for user
-     */
-    @Transactional(readOnly = true)
-    public List<PortfolioTransactionEntity> getUserTransactionHistory(String userId) {
-        log.debug("Fetching transaction history for user: {}", userId);
-        return transactionRepository.findByUserIdOrderByDateDesc(userId);
-    }
-
-    /**
-     * Get transaction history for specific asset
-     */
-    @Transactional(readOnly = true)
-    public List<PortfolioTransactionEntity> getAssetTransactionHistory(String userId, String assetType) {
-        log.debug("Fetching transaction history for user: {}, asset: {}", userId, assetType);
-        return transactionRepository.findByUserIdAndAssetTypeOrderByDateDesc(userId, assetType);
-    }
-
-    private static class AddTransactionContext {
+    private static class Context {
         final String userId;
         final String transactionType;
         final String assetType;
@@ -198,18 +153,8 @@ public class PortfolioService {
         PortfolioTransactionEntity transaction;
         PortfolioTransactionEntity savedTransaction;
 
-        AddTransactionContext(
-                String userId,
-                String transactionType,
-                String assetType,
-                BigDecimal quantity,
-                BigDecimal price,
-                BigDecimal totalAmount,
-                BigDecimal fee,
-                BigDecimal tax,
-                String referenceId,
-                String note
-        ) {
+        Context(String userId, String transactionType, String assetType, BigDecimal quantity, BigDecimal price,
+                BigDecimal totalAmount, BigDecimal fee, BigDecimal tax, String referenceId, String note) {
             this.userId = userId;
             this.transactionType = transactionType;
             this.assetType = assetType;

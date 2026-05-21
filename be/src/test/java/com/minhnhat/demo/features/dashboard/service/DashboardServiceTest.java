@@ -36,7 +36,7 @@ public class DashboardServiceTest {
     private SecurityUtils securityUtils;
 
     @InjectMocks
-    private DashboardService dashboardService;
+    private GetCurrentUserDashboardService dashboardService;
 
     private static final String TEST_USER_ID = "test-user-123";
 
@@ -57,7 +57,7 @@ public class DashboardServiceTest {
         when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(new ArrayList<>());
 
-        DashboardResponse response = dashboardService.getDashboard();
+        DashboardResponse response = dashboardService.execute();
 
         assertNotNull(response);
         assertNotNull(response.getSummary());
@@ -82,7 +82,7 @@ public class DashboardServiceTest {
         when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
-        DashboardResponse response = dashboardService.getDashboard();
+        DashboardResponse response = dashboardService.execute();
 
         assertNotNull(response);
         assertEquals(1, response.getPortfolios().size());
@@ -134,7 +134,7 @@ public class DashboardServiceTest {
         when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
-        DashboardResponse response = dashboardService.getDashboard();
+        DashboardResponse response = dashboardService.execute();
 
         assertEquals(2, response.getPortfolios().size());
 
@@ -167,7 +167,7 @@ public class DashboardServiceTest {
         when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
-        DashboardResponse response = dashboardService.getDashboard();
+        DashboardResponse response = dashboardService.execute();
 
         // Should still process, treating null price as 0
         assertNotNull(response);
@@ -190,7 +190,7 @@ public class DashboardServiceTest {
         when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
-        DashboardResponse response = dashboardService.getDashboard();
+        DashboardResponse response = dashboardService.execute();
 
         assertNotNull(response);
         // profitRate should be 0 when investedCost is 0
@@ -213,7 +213,7 @@ public class DashboardServiceTest {
         when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
-        DashboardResponse response = dashboardService.getDashboard();
+        DashboardResponse response = dashboardService.execute();
 
         DashboardResponse.PortfolioItem item = response.getPortfolios().get(0);
 
