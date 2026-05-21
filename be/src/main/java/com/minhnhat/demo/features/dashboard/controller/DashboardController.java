@@ -6,7 +6,6 @@ import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
 import com.minhnhat.demo.features.dashboard.service.IDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,25 +38,6 @@ public class DashboardController {
     @GetMapping
     public ApiResponse<DashboardResponse> getDashboard() {
         DashboardResponse data = dashboardService.getDashboard();
-
-        return ApiResponse.<DashboardResponse>builder()
-                .data(data)
-                .message(DASHBOARD_INFO_001, messageService.get(DASHBOARD_INFO_001), SERVICE_NAME)
-                .build();
-    }
-
-    /**
-     * Get dashboard for a specific user (admin feature)
-     * 
-     * Endpoint: GET /api/v1/dashboard/{userId}
-     * 
-     * @param userId The user ID to fetch dashboard for
-     * @return ApiResponse containing DashboardResponse
-     */
-    @GetMapping("/{userId}")
-    public ApiResponse<DashboardResponse> getDashboardByUserId(
-            @PathVariable String userId) {
-        DashboardResponse data = dashboardService.getDashboardByUserId(userId);
 
         return ApiResponse.<DashboardResponse>builder()
                 .data(data)

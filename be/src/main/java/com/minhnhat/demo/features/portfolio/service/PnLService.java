@@ -1,7 +1,7 @@
 package com.minhnhat.demo.features.portfolio.service;
 
-import com.minhnhat.demo.features.portfolio.entity.AssetPriceEntity;
-import com.minhnhat.demo.features.portfolio.repository.AssetPriceRepository;
+import com.minhnhat.demo.common.db.entity.AssetPriceEntity;
+import com.minhnhat.demo.common.db.repository.AssetPriceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class PnLService {
     @Transactional(readOnly = true)
     public Optional<BigDecimal> getLatestAssetPrice(String assetType) {
         return assetPriceRepository.findById(assetType)
-                .map(AssetPriceEntity::getPrice);
+                .map(AssetPriceEntity::getBuyPrice);
     }
 
     /**
@@ -37,7 +37,7 @@ public class PnLService {
     @Transactional(readOnly = true)
     public Optional<BigDecimal> getAssetPrice(String assetType) {
         return assetPriceRepository.findById(assetType)
-                .map(AssetPriceEntity::getPrice);
+                .map(AssetPriceEntity::getBuyPrice);
     }
 }
 

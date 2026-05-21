@@ -2,9 +2,8 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema } from '../validation/login.schema';
+import { loginSchema, LoginForm } from '../validation/login.schema';
 import { useLogin } from '../hooks/useLogin';
-import { LoginFormData } from '../type/login.form';
 
 const LoginForm: React.FC = () => {
   const router = useRouter();
@@ -21,11 +20,11 @@ const LoginForm: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
+  } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data: LoginFormData) => {
+  const onSubmit = (data: LoginForm) => {
     handleLogin(data);
   };
 

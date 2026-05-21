@@ -1,9 +1,9 @@
 package com.minhnhat.demo.features.portfolio.service;
 
-import com.minhnhat.demo.features.portfolio.entity.PortfolioEntity;
-import com.minhnhat.demo.features.portfolio.entity.PortfolioTransactionEntity;
-import com.minhnhat.demo.features.portfolio.repository.PortfolioRepository;
-import com.minhnhat.demo.features.portfolio.repository.PortfolioTransactionRepository;
+import com.minhnhat.demo.common.db.entity.PortfolioEntity;
+import com.minhnhat.demo.common.db.entity.PortfolioTransactionEntity;
+import com.minhnhat.demo.common.db.repository.PortfolioRepository;
+import com.minhnhat.demo.common.db.repository.PortfolioTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -81,50 +81,88 @@ public class PortfolioService {
             BigDecimal tax,
             String referenceId,
             String note) {
+        AddTransactionContext ctx = new AddTransactionContext(
+                userId,
+                transactionType,
+                assetType,
+                quantity,
+                price,
+                totalAmount,
+                fee,
+                tax,
+                referenceId,
+                note
+        );
 
+        validateRequest(ctx);
+        loadData(ctx);
+        processBusiness(ctx);
+        return createResponse(ctx);
+    }
+
+    private void validateRequest(AddTransactionContext ctx) {
         log.info("Recording transaction - User: {}, Type: {}, Asset: {}, Qty: {}, Price: {}",
-                userId, transactionType, assetType, quantity, price);
+                ctx.userId, ctx.transactionType, ctx.assetType, ctx.quantity, ctx.price);
+    }
 
-        // Get or create portfolio
-        PortfolioEntity portfolio = getOrCreatePortfolio(userId, assetType);
+    private void loadData(AddTransactionContext ctx) {
+        ctx.portfolio = getOrCreatePortfolio(ctx.userId, ctx.assetType);
+    }
 
-        // Create transaction record (immutable)
-        PortfolioTransactionEntity transaction = PortfolioTransactionEntity.builder()
-                .userId(userId)
-                .transactionType(transactionType)
-                .assetType(assetType)
-                .quantity(quantity)
-                .price(price)
-                .totalAmount(totalAmount)
-                .fee(fee != null ? fee : BigDecimal.ZERO)
-                .tax(tax != null ? tax : BigDecimal.ZERO)
-                .referenceId(referenceId)
-                .note(note)
+    private void processBusiness(AddTransactionContext ctx) {
+        validateBusiness(ctx);
+        prepare(ctx);
+        execute(ctx);
+        persist(ctx);
+        afterProcess(ctx);
+    }
+
+    private void validateBusiness(AddTransactionContext ctx) {
+        // Keep behavior unchanged: no additional validation in current flow.
+    }
+
+    private void prepare(AddTransactionContext ctx) {
+        ctx.transaction = PortfolioTransactionEntity.builder()
+                .userId(ctx.userId)
+                .transactionType(ctx.transactionType)
+                .assetType(ctx.assetType)
+                .quantity(ctx.quantity)
+                .price(ctx.price)
+                .totalAmount(ctx.totalAmount)
+                .fee(ctx.fee != null ? ctx.fee : BigDecimal.ZERO)
+                .tax(ctx.tax != null ? ctx.tax : BigDecimal.ZERO)
+                .referenceId(ctx.referenceId)
+                .note(ctx.note)
                 .build();
+    }
 
-        // Persist transaction
-        PortfolioTransactionEntity saved = transactionRepository.save(transaction);
-        log.info("Transaction recorded with ID: {}", saved.getId());
-
-        // Update portfolio based on transaction type
-        if ("BUY".equals(transactionType)) {
-            portfolio.setQuantity(portfolio.getQuantity().add(quantity));
-            portfolio.setTotalInvested(portfolio.getTotalInvested().add(totalAmount));
-        } else if ("SELL".equals(transactionType)) {
-            portfolio.setQuantity(portfolio.getQuantity().subtract(quantity));
-            // For selling, we reduce the proportional invested amount
-            if (portfolio.getQuantity().compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal proportionalInvested = portfolio.getTotalInvested()
-                        .multiply(quantity)
-                        .divide(portfolio.getQuantity().add(quantity), 2, RoundingMode.HALF_UP);
-                portfolio.setTotalInvested(portfolio.getTotalInvested().subtract(proportionalInvested));
+    private void execute(AddTransactionContext ctx) {
+        if ("BUY".equals(ctx.transactionType)) {
+            ctx.portfolio.setQuantity(ctx.portfolio.getQuantity().add(ctx.quantity));
+            ctx.portfolio.setTotalInvested(ctx.portfolio.getTotalInvested().add(ctx.totalAmount));
+        } else if ("SELL".equals(ctx.transactionType)) {
+            ctx.portfolio.setQuantity(ctx.portfolio.getQuantity().subtract(ctx.quantity));
+            if (ctx.portfolio.getQuantity().compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal proportionalInvested = ctx.portfolio.getTotalInvested()
+                        .multiply(ctx.quantity)
+                        .divide(ctx.portfolio.getQuantity().add(ctx.quantity), 2, RoundingMode.HALF_UP);
+                ctx.portfolio.setTotalInvested(ctx.portfolio.getTotalInvested().subtract(proportionalInvested));
             }
         }
-        
-        portfolioRepository.save(portfolio);
-        log.info("Portfolio {} updated", portfolio.getId());
+    }
 
-        return saved;
+    private void persist(AddTransactionContext ctx) {
+        ctx.savedTransaction = transactionRepository.save(ctx.transaction);
+        portfolioRepository.save(ctx.portfolio);
+    }
+
+    private void afterProcess(AddTransactionContext ctx) {
+        log.info("Transaction recorded with ID: {}", ctx.savedTransaction.getId());
+        log.info("Portfolio {} updated", ctx.portfolio.getId());
+    }
+
+    private PortfolioTransactionEntity createResponse(AddTransactionContext ctx) {
+        return ctx.savedTransaction;
     }
 
     /**
@@ -143,6 +181,46 @@ public class PortfolioService {
     public List<PortfolioTransactionEntity> getAssetTransactionHistory(String userId, String assetType) {
         log.debug("Fetching transaction history for user: {}, asset: {}", userId, assetType);
         return transactionRepository.findByUserIdAndAssetTypeOrderByDateDesc(userId, assetType);
+    }
+
+    private static class AddTransactionContext {
+        final String userId;
+        final String transactionType;
+        final String assetType;
+        final BigDecimal quantity;
+        final BigDecimal price;
+        final BigDecimal totalAmount;
+        final BigDecimal fee;
+        final BigDecimal tax;
+        final String referenceId;
+        final String note;
+        PortfolioEntity portfolio;
+        PortfolioTransactionEntity transaction;
+        PortfolioTransactionEntity savedTransaction;
+
+        AddTransactionContext(
+                String userId,
+                String transactionType,
+                String assetType,
+                BigDecimal quantity,
+                BigDecimal price,
+                BigDecimal totalAmount,
+                BigDecimal fee,
+                BigDecimal tax,
+                String referenceId,
+                String note
+        ) {
+            this.userId = userId;
+            this.transactionType = transactionType;
+            this.assetType = assetType;
+            this.quantity = quantity;
+            this.price = price;
+            this.totalAmount = totalAmount;
+            this.fee = fee;
+            this.tax = tax;
+            this.referenceId = referenceId;
+            this.note = note;
+        }
     }
 }
 

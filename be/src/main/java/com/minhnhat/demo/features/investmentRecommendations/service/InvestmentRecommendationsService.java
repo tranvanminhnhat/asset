@@ -6,13 +6,13 @@ import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.features.investmentRecommendations.constant.InvestmentRecommendationsConstant;
 import com.minhnhat.demo.features.investmentRecommendations.dto.request.InvestmentRecommendationsRequest;
 import com.minhnhat.demo.features.investmentRecommendations.dto.response.InvestmentRecommendationsResponse;
-import com.minhnhat.demo.features.investmentRecommendations.repository.AssetResidualsRepository;
-import com.minhnhat.demo.features.master.entity.AllocationStrategyEntity;
-import com.minhnhat.demo.features.master.entity.AllocationStrategyDetailEntity;
-import com.minhnhat.demo.features.master.repository.AllocationStrategyRepository;
-import com.minhnhat.demo.features.master.repository.AllocationStrategyDetailRepository;
-import com.minhnhat.demo.features.portfolio.entity.AssetPriceEntity;
-import com.minhnhat.demo.features.portfolio.repository.AssetPriceRepository;
+import com.minhnhat.demo.common.db.entity.AllocationStrategyDetailEntity;
+import com.minhnhat.demo.common.db.entity.AllocationStrategyEntity;
+import com.minhnhat.demo.common.db.entity.AssetPriceEntity;
+import com.minhnhat.demo.common.db.repository.AllocationStrategyDetailRepository;
+import com.minhnhat.demo.common.db.repository.AllocationStrategyRepository;
+import com.minhnhat.demo.common.db.repository.AssetPriceRepository;
+import com.minhnhat.demo.common.db.repository.AssetResidualsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,7 @@ public class InvestmentRecommendationsService {
     public InvestmentRecommendationsResponse allocate(InvestmentRecommendationsRequest request) {
         validateRequest(request);
         Context ctx = loadData(request);
-        executeBusinessLogic(ctx);
+        processBusiness(ctx);
         return createResponse(ctx);
     }
 
@@ -77,27 +77,35 @@ public class InvestmentRecommendationsService {
 
         // Load strategy by code from mst_allocation_strategies table
         Optional<AllocationStrategyEntity> strategyOpt = strategyRepository.findByCode(type);
-        if (strategyOpt.isEmpty()) {
-            log.error("Allocation validation failed: strategy config not found for code={}", type);
-            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
+        ctx.strategy = strategyOpt.orElse(null);
+        if (ctx.strategy != null) {
+            // Load strategy details by strategy_id from mst_allocation_strategy_details table
+            ctx.details = detailRepository.findByStrategyId(ctx.strategy.getId());
         }
-
-        AllocationStrategyEntity strategy = strategyOpt.get();
-        
-        // Load strategy details by strategy_id from mst_allocation_strategy_details table
-        List<AllocationStrategyDetailEntity> details = detailRepository.findByStrategyId(strategy.getId());
-        if (details == null || details.isEmpty()) {
-            log.error("Allocation validation failed: no details found for strategy id={}", strategy.getId());
-            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
-        }
-
-
-        ctx.strategy = strategy;
-        ctx.details = details;
         return ctx;
     }
 
-    private void executeBusinessLogic(Context ctx) {
+    private void processBusiness(Context ctx) {
+        validateBusiness(ctx);
+        prepare(ctx);
+        execute(ctx);
+        persist(ctx);
+        afterProcess(ctx);
+    }
+
+    private void validateBusiness(Context ctx) {
+        if (ctx.strategy == null) {
+            log.error("Allocation validation failed: strategy config not found for code={}", ctx.code);
+            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
+        }
+
+        if (ctx.details == null || ctx.details.isEmpty()) {
+            log.error("Allocation validation failed: no details found for strategy id={}", ctx.strategy.getId());
+            throw new LogicException(SERVICE_NAME, messageService.get(InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001), InvestmentRecommendationsConstant.ALLOCATE_LOGIC_ERROR_001);
+        }
+    }
+
+    private void prepare(Context ctx) {
         // Extract percentages, minimumLotSizes, and asset prices from strategy details by asset_type
         BigDecimal pEmergency = BigDecimal.ZERO;
         BigDecimal pGold = BigDecimal.ZERO;
@@ -113,7 +121,7 @@ public class InvestmentRecommendationsService {
             String assetType = detail.getAssetType();
             BigDecimal percentage = nonNull(detail.getPercentage());
             BigDecimal minimumLotSize = nonNull(detail.getMinimumLotSizeAmount());
-            
+
             if ("EMERGENCY".equalsIgnoreCase(assetType)) {
                 pEmergency = percentage;
                 minLotEmergency = minimumLotSize;
@@ -169,18 +177,6 @@ public class InvestmentRecommendationsService {
             amtEtf = diff.setScale(2, RoundingMode.HALF_UP);
         }
 
-        // Load carry over amounts from AssetResidualsRepository based on user_id and asset_type
-        ctx.carryOverEmergency = loadCarryOverAmount(ctx.userId, "EMERGENCY");
-        ctx.carryOverGold = loadCarryOverAmount(ctx.userId, "GOLD");
-        ctx.carryOverEtf = loadCarryOverAmount(ctx.userId, "ETF");
-        ctx.carryOverStock = loadCarryOverAmount(ctx.userId, "STOCK");
-
-        // Load asset prices from asset_prices table
-        ctx.priceEmergency = loadAssetPrice("EMERGENCY");
-        ctx.priceGold = loadAssetPrice("GOLD");
-        ctx.priceEtf = loadAssetPrice("ETF");
-        ctx.priceStock = loadAssetPrice("STOCK");
-
         ctx.percentEmergency = pEmergency;
         ctx.percentGold = pGold;
         ctx.percentEtf = pEtf;
@@ -195,12 +191,32 @@ public class InvestmentRecommendationsService {
         ctx.minimumLotGold = minLotGold;
         ctx.minimumLotEtf = minLotEtf;
         ctx.minimumLotStock = minLotStock;
+    }
 
+    private void execute(Context ctx) {
         // Calculate investable and residual amounts
+        ctx.carryOverEmergency = loadCarryOverAmount(ctx.userId, "EMERGENCY");
+        ctx.carryOverGold = loadCarryOverAmount(ctx.userId, "GOLD");
+        ctx.carryOverEtf = loadCarryOverAmount(ctx.userId, "ETF");
+        ctx.carryOverStock = loadCarryOverAmount(ctx.userId, "STOCK");
+
+        ctx.priceEmergency = loadAssetPrice("EMERGENCY");
+        ctx.priceGold = loadAssetPrice("GOLD");
+        ctx.priceEtf = loadAssetPrice("ETF");
+        ctx.priceStock = loadAssetPrice("STOCK");
+
         calculateInvestableAndResidual(ctx, "EMERGENCY");
         calculateInvestableAndResidual(ctx, "GOLD");
         calculateInvestableAndResidual(ctx, "ETF");
         calculateInvestableAndResidual(ctx, "STOCK");
+    }
+
+    private void persist(Context ctx) {
+        // Read-only flow; no persistence in recommendations.
+    }
+
+    private void afterProcess(Context ctx) {
+        // No side effects for this flow.
     }
 
     private InvestmentRecommendationsResponse createResponse(Context ctx) {
@@ -393,7 +409,7 @@ public class InvestmentRecommendationsService {
     private BigDecimal loadAssetPrice(String assetType) {
         try {
             return assetPriceRepository.findById(assetType)
-                    .map(AssetPriceEntity::getPrice)
+                    .map(AssetPriceEntity::getBuyPrice)
                     .orElse(BigDecimal.ZERO);
         } catch (Exception e) {
             log.warn("Error loading asset price for assetType={}: {}", assetType, e.getMessage());

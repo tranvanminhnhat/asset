@@ -2,16 +2,13 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { formatCurrency } from '@/lib/formatters';
 import RiskOption from '../components/RiskOption';
 import { useInvestmentAmount } from '../hooks/useInvestmentAmount';
 import LogoutButton from '@/features/logout/components/LogoutButton';
-import { InvestmentAmountRequest, InvestmentType } from '../type/investment-amount.type';
-
-interface InvestmentAmountFormValues {
-  amount: string;
-  type: InvestmentType;
-}
+import { InvestmentAmountRequest } from '../type/investment-amount.type';
+import { investmentAmountSchema, InvestmentAmountFormValues } from '../validation/investment-amount.schema';
 
 const InvestmentAmountPage: React.FC = () => {
   const router = useRouter();
@@ -22,6 +19,7 @@ const InvestmentAmountPage: React.FC = () => {
     setValue,
     formState: { errors },
   } = useForm<InvestmentAmountFormValues>({
+    resolver: zodResolver(investmentAmountSchema),
     defaultValues: {
       amount: '',
       type: 'SAFE',
@@ -163,10 +161,7 @@ const InvestmentAmountPage: React.FC = () => {
               <input
                 type="text"
                 inputMode="numeric"
-                {...register('amount', {
-                  required: 'Vui lòng nhập số tiền đầu tư.',
-                  validate: (value) => Number(value.replace(/[^\d]/g, '')) > 0 || 'Số tiền phải lớn hơn 0.',
-                })}
+                {...register('amount')}
                 className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-semibold"
                 placeholder="Ví dụ: 10000000"
               />

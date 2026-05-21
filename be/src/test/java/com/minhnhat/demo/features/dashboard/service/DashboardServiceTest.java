@@ -3,7 +3,7 @@ package com.minhnhat.demo.features.dashboard.service;
 import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
-import com.minhnhat.demo.features.investmentComplete.repository.InvestmentPlanAllocationRepository;
+import com.minhnhat.demo.common.db.repository.InvestmentPlanAllocationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

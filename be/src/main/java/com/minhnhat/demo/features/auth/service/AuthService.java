@@ -13,9 +13,8 @@ import com.minhnhat.demo.features.auth.dto.response.LoginResponse;
 import com.minhnhat.demo.features.auth.dto.response.LogoutResponse;
 import com.minhnhat.demo.features.auth.dto.response.RefreshTokenResponse;
 import com.minhnhat.demo.features.auth.dto.response.RegisterAccountResponse;
-import com.minhnhat.demo.features.auth.entity.UserEntity;
-import com.minhnhat.demo.features.auth.repository.UserRepository;
-import com.minhnhat.demo.features.auth.service.UserPrincipal;
+import com.minhnhat.demo.common.db.entity.UserEntity;
+import com.minhnhat.demo.common.db.repository.UserRepository;
 import com.minhnhat.demo.common.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,79 +49,17 @@ public class AuthService {
     private static final String URL = "http://localhost:8080/auth/verify-email?token=";
 
     public RegisterAccountResponse registerAccount(RegisterAccountRequest request) {
-
         validateRequest(request);
-
-        String token = UUID.randomUUID().toString();
-
-        String userId = UUID.randomUUID().toString();
-
-        registerNewAccount(request, token, userId);
-
-        String verifyLink = URL + token;
-
-        sendVerifyMail(request, verifyLink);
-
-        return createResponse(userId, request);
+        RegisterContext ctx = loadData(request);
+        processBusiness(ctx);
+        return createResponse(ctx);
     }
 
     public LoginResponse login(LoginRequest request) {
-        // Validate request
-        if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            log.error("Login validation failed: email is empty");
-            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
-        }
-
-        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-            log.error("Login validation failed: password is empty");
-            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
-        }
-
-        // Get user entity
-        UserEntity userEntity = userRepository.findFirstByEmail(request.getEmail())
-                .orElseThrow(() -> {
-                    log.error("Login validation failed: user not found for email={}", request.getEmail());
-                    return new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
-                });
-
-        // Validate login request
-        validateLoginRequest(request, userEntity);
-
-        // Create User Principal
-        UserPrincipal principal = UserPrincipal.from(userEntity);
-
-        // Set SecurityContext
-        Authentication authentication =
-                new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        principal.getAuthorities()
-                );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // Generate access token and refresh token
-        String accessToken = jwtTokenProvider.generateAccessToken(principal);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(principal);
-
-        // Save refresh token to database
-        userEntity.setToken(refreshToken);
-        try {
-            userRepository.save(userEntity);
-            log.info("Refresh token saved successfully for email={}", userEntity.getEmail());
-        } catch (Exception e) {
-            log.error("Failed to save refresh token for email={}", userEntity.getEmail(), e);
-            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
-        }
-
-        // Create response
-        return LoginResponse.builder()
-                .userId(userEntity.getUserId())
-                .email(userEntity.getEmail())
-                .status(userEntity.getStatus())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
+        validateRequest(request);
+        LoginContext ctx = loadData(request);
+        processBusiness(ctx);
+        return createResponse(ctx);
     }
 
     private void validateLoginRequest(LoginRequest request, UserEntity userEntity) {
@@ -146,13 +83,6 @@ public class AuthService {
         }
     }
 
-
-    private RegisterAccountResponse createResponse(String userId, RegisterAccountRequest request) {
-        return RegisterAccountResponse.builder()
-                .userId(userId)
-                .email(request.getEmail())
-                .build();
-    }
 
     private void sendVerifyMail(RegisterAccountRequest request, String verifyLink) {
         MailPayload payload = MailPayload.builder()
@@ -237,16 +167,16 @@ public class AuthService {
             log.error("Register validation failed: confirmPassword is empty");
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
         }
+    }
 
-        // Check if email already exists
-        if (userRepository.findFirstByEmail(request.getEmail()).isPresent()) {
-            log.error("Register validation failed: email already exists={}", request.getEmail());
+    private void validateBusiness(RegisterContext ctx) {
+        if (ctx.duplicateEmail) {
+            log.error("Register validation failed: email already exists={}", ctx.request.getEmail());
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_003), REGISTER_LOGIC_ERROR_003);
         }
 
-        // Check password and confirm password match
-        if (!request.getPassword().equals(request.getConfirmPassword())) {
-            log.error("Register validation failed: password mismatch for email={}", request.getEmail());
+        if (!ctx.request.getPassword().equals(ctx.request.getConfirmPassword())) {
+            log.error("Register validation failed: password mismatch for email={}", ctx.request.getEmail());
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_004), REGISTER_LOGIC_ERROR_004);
         }
     }
@@ -266,59 +196,226 @@ public class AuthService {
     }
 
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
-        // Validate request
+        validateRequest(request);
+        RefreshTokenContext ctx = loadData(request);
+        processBusiness(ctx);
+        return createResponse(ctx);
+    }
+
+    private void validateRequest(LoginRequest request) {
+        if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            log.error("Login validation failed: email is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            log.error("Login validation failed: password is empty");
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+        }
+    }
+
+    private LoginContext loadData(LoginRequest request) {
+        LoginContext ctx = new LoginContext();
+        ctx.request = request;
+        ctx.userEntity = userRepository.findFirstByEmail(request.getEmail())
+                .orElseThrow(() -> {
+                    log.error("Login validation failed: user not found for email={}", request.getEmail());
+                    return new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
+                });
+        return ctx;
+    }
+
+    private void processBusiness(LoginContext ctx) {
+        validateBusiness(ctx);
+        prepare(ctx);
+        execute(ctx);
+        persist(ctx);
+        afterProcess(ctx);
+    }
+
+    private void validateBusiness(LoginContext ctx) {
+        validateLoginRequest(ctx.request, ctx.userEntity);
+    }
+
+    private void prepare(LoginContext ctx) {
+        ctx.principal = UserPrincipal.from(ctx.userEntity);
+        ctx.authentication = new UsernamePasswordAuthenticationToken(
+                ctx.principal,
+                null,
+                ctx.principal.getAuthorities()
+        );
+    }
+
+    private void execute(LoginContext ctx) {
+        SecurityContextHolder.getContext().setAuthentication(ctx.authentication);
+        ctx.accessToken = jwtTokenProvider.generateAccessToken(ctx.principal);
+        ctx.refreshToken = jwtTokenProvider.generateRefreshToken(ctx.principal);
+        ctx.userEntity.setToken(ctx.refreshToken);
+    }
+
+    private void persist(LoginContext ctx) {
+        try {
+            userRepository.save(ctx.userEntity);
+            log.info("Refresh token saved successfully for email={}", ctx.userEntity.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to save refresh token for email={}", ctx.userEntity.getEmail(), e);
+            throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
+        }
+    }
+
+    private void afterProcess(LoginContext ctx) {
+        // No additional side effects.
+    }
+
+    private LoginResponse createResponse(LoginContext ctx) {
+        return LoginResponse.builder()
+                .userId(ctx.userEntity.getUserId())
+                .email(ctx.userEntity.getEmail())
+                .status(ctx.userEntity.getStatus())
+                .accessToken(ctx.accessToken)
+                .refreshToken(ctx.refreshToken)
+                .build();
+    }
+
+    private RegisterContext loadData(RegisterAccountRequest request) {
+        RegisterContext ctx = new RegisterContext();
+        ctx.request = request;
+        ctx.token = UUID.randomUUID().toString();
+        ctx.userId = UUID.randomUUID().toString();
+        ctx.duplicateEmail = userRepository.findFirstByEmail(request.getEmail()).isPresent();
+        return ctx;
+    }
+
+    private void processBusiness(RegisterContext ctx) {
+        validateBusiness(ctx);
+        prepare(ctx);
+        execute(ctx);
+        persist(ctx);
+        afterProcess(ctx);
+    }
+
+    private void prepare(RegisterContext ctx) {
+        ctx.verifyLink = URL + ctx.token;
+    }
+
+    private void execute(RegisterContext ctx) {
+        registerNewAccount(ctx.request, ctx.token, ctx.userId);
+        sendVerifyMail(ctx.request, ctx.verifyLink);
+    }
+
+    private void persist(RegisterContext ctx) {
+        // Persistence is already executed inside registerNewAccount.
+    }
+
+    private void afterProcess(RegisterContext ctx) {
+        // No additional side effects.
+    }
+
+    private RegisterAccountResponse createResponse(RegisterContext ctx) {
+        return RegisterAccountResponse.builder()
+                .userId(ctx.userId)
+                .email(ctx.request.getEmail())
+                .build();
+    }
+
+    private void validateRequest(RefreshTokenRequest request) {
         if (request == null || request.getRefreshToken() == null || request.getRefreshToken().trim().isEmpty()) {
             log.error("Refresh token validation failed: token is empty");
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
+    }
 
-        // Validate token format
-        if (!jwtTokenProvider.validateToken(request.getRefreshToken())) {
+    private RefreshTokenContext loadData(RefreshTokenRequest request) {
+        RefreshTokenContext ctx = new RefreshTokenContext();
+        ctx.request = request;
+        return ctx;
+    }
+
+    private void processBusiness(RefreshTokenContext ctx) {
+        validateBusiness(ctx);
+        prepare(ctx);
+        execute(ctx);
+        persist(ctx);
+        afterProcess(ctx);
+    }
+
+    private void validateBusiness(RefreshTokenContext ctx) {
+        if (!jwtTokenProvider.validateToken(ctx.request.getRefreshToken())) {
             log.error("Refresh token validation failed: invalid or expired token");
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
 
-        // Check if it's a refresh token
-        if (!jwtTokenProvider.isRefreshToken(request.getRefreshToken())) {
+        if (!jwtTokenProvider.isRefreshToken(ctx.request.getRefreshToken())) {
             log.error("Refresh token validation failed: token is not a refresh token");
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
+    }
 
-        // Get userId and email from token
-        String userId = jwtTokenProvider.getUserIdFromToken(request.getRefreshToken());
-        String email = jwtTokenProvider.getEmailFromToken(request.getRefreshToken());
-
-        // Get user entity
-        UserEntity userEntity = userRepository.findById(userId)
+    private void prepare(RefreshTokenContext ctx) {
+        ctx.userId = jwtTokenProvider.getUserIdFromToken(ctx.request.getRefreshToken());
+        ctx.email = jwtTokenProvider.getEmailFromToken(ctx.request.getRefreshToken());
+        ctx.userEntity = userRepository.findById(ctx.userId)
                 .orElseThrow(() -> {
-                    log.error("Refresh token validation failed: user not found for userId={}", userId);
+                    log.error("Refresh token validation failed: user not found for userId={}", ctx.userId);
                     return new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
                 });
 
-        // Validate that stored refresh token matches the provided token
-        if (userEntity.getToken() == null || !userEntity.getToken().equals(request.getRefreshToken())) {
-            log.error("Refresh token validation failed: token mismatch for userId={}", userId);
+        if (ctx.userEntity.getToken() == null || !ctx.userEntity.getToken().equals(ctx.request.getRefreshToken())) {
+            log.error("Refresh token validation failed: token mismatch for userId={}", ctx.userId);
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_002), REGISTER_LOGIC_ERROR_002);
         }
+    }
 
-        // Generate new access token and refresh token
-        String newAccessToken = jwtTokenProvider.generateAccessToken(userId, email);
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, email);
+    private void execute(RefreshTokenContext ctx) {
+        ctx.newAccessToken = jwtTokenProvider.generateAccessToken(ctx.userId, ctx.email);
+        ctx.newRefreshToken = jwtTokenProvider.generateRefreshToken(ctx.userId, ctx.email);
+        ctx.userEntity.setToken(ctx.newRefreshToken);
+    }
 
-        // Update refresh token in database
-        userEntity.setToken(newRefreshToken);
+    private void persist(RefreshTokenContext ctx) {
         try {
-            userRepository.save(userEntity);
-            log.info("Refresh token renewed successfully for userId={}", userId);
+            userRepository.save(ctx.userEntity);
+            log.info("Refresh token renewed successfully for userId={}", ctx.userId);
         } catch (Exception e) {
-            log.error("Failed to update refresh token for userId={}", userId, e);
+            log.error("Failed to update refresh token for userId={}", ctx.userId, e);
             throw new LogicException(SERVICE_NAME, messageService.get(REGISTER_LOGIC_ERROR_001), REGISTER_LOGIC_ERROR_001);
         }
+    }
 
-        // Create response
+    private void afterProcess(RefreshTokenContext ctx) {
+        // No additional side effects.
+    }
+
+    private RefreshTokenResponse createResponse(RefreshTokenContext ctx) {
         return RefreshTokenResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
+                .accessToken(ctx.newAccessToken)
+                .refreshToken(ctx.newRefreshToken)
                 .build();
+    }
+
+    private static class RegisterContext {
+        RegisterAccountRequest request;
+        String token;
+        String userId;
+        String verifyLink;
+        boolean duplicateEmail;
+    }
+
+    private static class LoginContext {
+        LoginRequest request;
+        UserEntity userEntity;
+        UserPrincipal principal;
+        Authentication authentication;
+        String accessToken;
+        String refreshToken;
+    }
+
+    private static class RefreshTokenContext {
+        RefreshTokenRequest request;
+        String userId;
+        String email;
+        UserEntity userEntity;
+        String newAccessToken;
+        String newRefreshToken;
     }
 }

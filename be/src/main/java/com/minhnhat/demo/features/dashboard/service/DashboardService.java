@@ -3,7 +3,7 @@ package com.minhnhat.demo.features.dashboard.service;
 import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
-import com.minhnhat.demo.features.investmentComplete.repository.InvestmentPlanAllocationRepository;
+import com.minhnhat.demo.common.db.repository.InvestmentPlanAllocationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -58,28 +58,90 @@ public class DashboardService implements IDashboardService {
     public DashboardResponse getDashboardByUserId(String userId) {
         log.info("getDashboardByUserId: Fetching dashboard data for userId: {}", userId);
 
-        // Step 1: Validate userId
+        validateRequest(userId);
         if (userId == null || userId.isBlank()) {
-            log.warn("getDashboardByUserId: userId is null or blank");
             return createEmptyDashboard();
         }
 
-        // Step 2: Load data - ONE optimized query
-        List<Map<String, Object>> dashboardData = loadData(userId);
+        Context ctx = loadData(userId);
+        processBusiness(ctx);
+        return createResponse(ctx);
+    }
 
-        // Step 3: Execute business logic
-        return createResponse(dashboardData);
+    private void validateRequest(String userId) {
+        if (userId == null || userId.isBlank()) {
+            log.warn("getDashboardByUserId: userId is null or blank");
+        }
     }
 
     /**
      * Load data using optimized query (no N+1 problem)
      * Joins investment_plan_allocations with asset_prices and groups by asset_type
      */
-    private List<Map<String, Object>> loadData(String userId) {
+    private Context loadData(String userId) {
         log.debug("loadData: Executing optimized dashboard query for userId: {}", userId);
-        List<Map<String, Object>> data = allocationRepository.findDashboardDataByUserId(userId);
-        log.debug("loadData: Found {} asset types", data.size());
-        return data;
+        Context ctx = new Context();
+        ctx.userId = userId;
+        ctx.dashboardData = allocationRepository.findDashboardDataByUserId(userId);
+        log.debug("loadData: Found {} asset types", ctx.dashboardData.size());
+        return ctx;
+    }
+
+    private void processBusiness(Context ctx) {
+        validateBusiness(ctx);
+        prepare(ctx);
+        execute(ctx);
+        persist(ctx);
+        afterProcess(ctx);
+    }
+
+    private void validateBusiness(Context ctx) {
+        // No additional business validation in current dashboard flow.
+    }
+
+    private void prepare(Context ctx) {
+        ctx.portfolios = new ArrayList<>();
+        ctx.totalInvestedCost = BigDecimal.ZERO;
+        ctx.totalCurrentValue = BigDecimal.ZERO;
+    }
+
+    private void execute(Context ctx) {
+        if (ctx.dashboardData == null || ctx.dashboardData.isEmpty()) {
+            return;
+        }
+
+        for (Map<String, Object> row : ctx.dashboardData) {
+            try {
+                String assetType = (String) row.get("assetType");
+                BigDecimal quantity = convertToBigDecimal(row.get("totalQuantity"));
+                BigDecimal investedCost = convertToBigDecimal(row.get("totalAmount"));
+                BigDecimal currentPrice = convertToBigDecimal(row.get("currentPrice"));
+
+                DashboardResponse.PortfolioItem item = calculatePortfolioItem(
+                        assetType,
+                        quantity,
+                        investedCost,
+                        currentPrice
+                );
+
+                ctx.portfolios.add(item);
+                ctx.totalInvestedCost = ctx.totalInvestedCost.add(investedCost);
+                ctx.totalCurrentValue = ctx.totalCurrentValue.add(item.getCurrentValue());
+
+            } catch (Exception e) {
+                log.error("createResponse: Error processing asset data: {}", row, e);
+            }
+        }
+
+        ctx.summary = calculateSummary(ctx.totalInvestedCost, ctx.totalCurrentValue);
+    }
+
+    private void persist(Context ctx) {
+        // Read-only flow; no persistence.
+    }
+
+    private void afterProcess(Context ctx) {
+        // No side effects in current flow.
     }
 
     /**
@@ -99,61 +161,22 @@ public class DashboardService implements IDashboardService {
      *   - totalProfit = totalCurrentValue - totalInvestedCost
      *   - totalProfitRate = totalProfit / totalInvestedCost
      */
-    private DashboardResponse createResponse(List<Map<String, Object>> dashboardData) {
-        if (dashboardData == null || dashboardData.isEmpty()) {
+    private DashboardResponse createResponse(Context ctx) {
+        if (ctx.dashboardData == null || ctx.dashboardData.isEmpty()) {
             log.info("createResponse: No dashboard data found, returning empty dashboard");
             return createEmptyDashboard();
         }
 
-        // Build portfolio items and aggregate summary
-        List<DashboardResponse.PortfolioItem> portfolios = new ArrayList<>();
-        BigDecimal totalInvestedCost = BigDecimal.ZERO;
-        BigDecimal totalCurrentValue = BigDecimal.ZERO;
-
-        for (Map<String, Object> row : dashboardData) {
-            try {
-                // Parse data from aggregated query result
-                String assetType = (String) row.get("assetType");
-                BigDecimal quantity = convertToBigDecimal(row.get("totalQuantity"));
-                BigDecimal investedCost = convertToBigDecimal(row.get("totalAmount"));
-                BigDecimal currentPrice = convertToBigDecimal(row.get("currentPrice"));
-
-                // Business logic: Calculate metrics for this asset
-                DashboardResponse.PortfolioItem item = calculatePortfolioItem(
-                    assetType,
-                    quantity,
-                    investedCost,
-                    currentPrice
-                );
-
-                portfolios.add(item);
-
-                // Accumulate summary totals
-                totalInvestedCost = totalInvestedCost.add(investedCost);
-                totalCurrentValue = totalCurrentValue.add(item.getCurrentValue());
-
-            } catch (Exception e) {
-                log.error("createResponse: Error processing asset data: {}", row, e);
-                // Skip this asset and continue
-            }
-        }
-
-        // Build summary with calculated profit metrics
-        DashboardResponse.Summary summary = calculateSummary(
-            totalInvestedCost,
-            totalCurrentValue
-        );
-
         log.info("createResponse: Dashboard built successfully with {} assets, " +
                 "totalInvestedCost={}, totalCurrentValue={}, totalProfit={}",
-                portfolios.size(),
-                totalInvestedCost,
-                totalCurrentValue,
-                summary.getTotalProfit());
+                ctx.portfolios.size(),
+                ctx.totalInvestedCost,
+                ctx.totalCurrentValue,
+                ctx.summary.getTotalProfit());
 
         return DashboardResponse.builder()
-                .summary(summary)
-                .portfolios(portfolios)
+                .summary(ctx.summary)
+                .portfolios(ctx.portfolios)
                 .build();
     }
 
@@ -285,6 +308,15 @@ public class DashboardService implements IDashboardService {
                 .summary(emptySummary)
                 .portfolios(new ArrayList<>())
                 .build();
+    }
+
+    private static class Context {
+        String userId;
+        List<Map<String, Object>> dashboardData;
+        List<DashboardResponse.PortfolioItem> portfolios;
+        BigDecimal totalInvestedCost;
+        BigDecimal totalCurrentValue;
+        DashboardResponse.Summary summary;
     }
 }
 

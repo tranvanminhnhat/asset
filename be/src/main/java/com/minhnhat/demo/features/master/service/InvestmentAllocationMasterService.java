@@ -2,13 +2,13 @@ package com.minhnhat.demo.features.master.service;
 
 import com.minhnhat.demo.common.exception.LogicException;
 import com.minhnhat.demo.common.config.MessageService;
-import com.minhnhat.demo.features.master.entity.AllocationStrategyEntity;
-import com.minhnhat.demo.features.master.entity.AllocationStrategyDetailEntity;
+import com.minhnhat.demo.common.db.entity.AllocationStrategyDetailEntity;
+import com.minhnhat.demo.common.db.entity.AllocationStrategyEntity;
 import com.minhnhat.demo.features.master.dto.request.InvestmentAllocationMasterCreateRequest;
 import com.minhnhat.demo.features.master.dto.request.InvestmentAllocationMasterUpdateRequest;
 import com.minhnhat.demo.features.master.dto.response.InvestmentAllocationMasterResponse;
-import com.minhnhat.demo.features.master.repository.AllocationStrategyRepository;
-import com.minhnhat.demo.features.master.repository.AllocationStrategyDetailRepository;
+import com.minhnhat.demo.common.db.repository.AllocationStrategyDetailRepository;
+import com.minhnhat.demo.common.db.repository.AllocationStrategyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

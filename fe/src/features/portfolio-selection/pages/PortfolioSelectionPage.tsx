@@ -1,8 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import PortfolioSelector from '../components/PortfolioSelector';
 import LogoutButton from '@/features/logout/components/LogoutButton';
+import { portfolioSelectionSchema, PortfolioSelectionFormValues } from '../validation/portfolio-selection.schema';
 
 // Mock data - in real app, this would come from API
 const PORTFOLIO_OPTIONS = [
@@ -31,17 +34,18 @@ const PORTFOLIO_OPTIONS = [
 
 const PortfolioSelectionPage: React.FC = () => {
   const router = useRouter();
-  const [selectedPortfolio, setSelectedPortfolio] = useState<string | null>('medium');
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PortfolioSelectionFormValues>({
+    resolver: zodResolver(portfolioSelectionSchema),
+    defaultValues: { selectedPortfolio: 'medium' },
+  });
 
-  const handleContinue = () => {
-    if (selectedPortfolio) {
-      // Save selection to state or local storage
-      const selection = {
-        portfolio: selectedPortfolio,
-      };
-      localStorage.setItem('investmentSelection', JSON.stringify(selection));
-      router.push('/investment-amount');
-    }
+  const onSubmit = (data: PortfolioSelectionFormValues) => {
+    localStorage.setItem('investmentSelection', JSON.stringify({ portfolio: data.selectedPortfolio }));
+    router.push('/investment-amount');
   };
 
   return (
@@ -57,39 +61,46 @@ const PortfolioSelectionPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-          <div className="mb-10">
-            <h2 className="text-xl font-semibold text-slate-900 mb-2">Chọn danh mục đầu tư</h2>
-            <p className="text-sm text-slate-600 mb-4">
-              Lựa chọn phân bổ phù hợp với mục tiêu tài chính của bạn.
-            </p>
-            <PortfolioSelector
-              options={PORTFOLIO_OPTIONS}
-              selectedId={selectedPortfolio}
-              onSelect={setSelectedPortfolio}
-            />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+            <div className="mb-10">
+              <h2 className="text-xl font-semibold text-slate-900 mb-2">Chọn danh mục đầu tư</h2>
+              <p className="text-sm text-slate-600 mb-4">
+                Lựa chọn phân bổ phù hợp với mục tiêu tài chính của bạn.
+              </p>
+              <Controller
+                name="selectedPortfolio"
+                control={control}
+                render={({ field }) => (
+                  <PortfolioSelector
+                    options={PORTFOLIO_OPTIONS}
+                    selectedId={field.value}
+                    onSelect={field.onChange}
+                  />
+                )}
+              />
+              {errors.selectedPortfolio && (
+                <p className="mt-2 text-sm text-red-600">{errors.selectedPortfolio.message}</p>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="flex gap-4 justify-between">
-          <button
-            onClick={() => router.back()}
-            className="px-6 py-3 border border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 transition"
-          >
-            Quay lại
-          </button>
-          <button
-            onClick={handleContinue}
-            disabled={!selectedPortfolio}
-            className={`px-6 py-3 rounded-lg font-semibold transition ${
-              selectedPortfolio
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-            }`}
-          >
-            Tiếp tục
-          </button>
-        </div>
+          <div className="flex gap-4 justify-between">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-6 py-3 border border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 transition"
+            >
+              Quay lại
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-lg font-semibold transition bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Tiếp tục
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

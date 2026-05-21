@@ -2,9 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema } from '../validation/register.schema';
+import { registerSchema, RegisterForm } from '../validation/register.schema';
 import { useRegister } from '../hooks/useRegister';
-import { RegisterFormData } from '../type/register.form';
 
 const RegisterForm: React.FC = () => {
   const { handleRegister, isLoading, isError, isSuccess } = useRegister();
@@ -13,11 +12,11 @@ const RegisterForm: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormData>({
+  } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = (data: RegisterFormData) => {
+  const onSubmit = (data: RegisterForm) => {
     handleRegister(data);
   };
 

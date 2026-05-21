@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { DashboardPortfolioItem, TransactionRequest, TransactionType } from '../type/dashboard.type';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { DashboardPortfolioItem, TransactionRequest } from '../type/dashboard.type';
+import { transactionSchema, TransactionFormValues } from '../validation/transaction.schema';
 
 interface TransactionFormProps {
   isSubmitting: boolean;
@@ -11,8 +14,8 @@ interface TransactionFormProps {
   onSubmit: (request: TransactionRequest) => Promise<void>;
 }
 
-const transactionTypes: TransactionType[] = ['BUY', 'SELL', 'DIVIDEND', 'ADJUSTMENT'];
-const assetTypes = ['STOCK', 'ETF', 'GOLD', 'EMERGENCY'];
+const transactionTypes = ['BUY', 'SELL', 'DIVIDEND', 'ADJUSTMENT'] as const;
+const assetTypes = ['STOCK', 'ETF', 'GOLD', 'EMERGENCY'] as const;
 
 const TransactionForm: React.FC<TransactionFormProps> = ({
   isSubmitting,
@@ -21,43 +24,45 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onSelectPortfolio,
   onSubmit,
 }) => {
-  const [assetType, setAssetType] = useState('STOCK');
-  const [transactionType, setTransactionType] = useState<TransactionType>('BUY');
-  const [quantity, setQuantity] = useState('1');
-  const [unitPrice, setUnitPrice] = useState('0');
-  const [transactionDate, setTransactionDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [notes, setNotes] = useState('');
-  const [referenceId, setReferenceId] = useState('');
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<TransactionFormValues>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: {
+      transactionType: 'BUY',
+      assetType: 'STOCK',
+      transactionDate: new Date().toISOString().slice(0, 10),
+      quantity: 1,
+      unitPrice: 0,
+      referenceId: '',
+      notes: '',
+    },
+  });
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const onFormSubmit = async (data: TransactionFormValues) => {
     if (selectedPortfolioId === null) {
       return;
     }
 
-    const parsedQuantity = Number(quantity);
-    const parsedUnitPrice = Number(unitPrice);
-
     await onSubmit({
       portfolioId: selectedPortfolioId,
-      transactionType,
-      assetType,
-      quantity: Number.isNaN(parsedQuantity) ? 0 : parsedQuantity,
-      unitPrice: Number.isNaN(parsedUnitPrice) ? 0 : parsedUnitPrice,
-      transactionDate: new Date(transactionDate).toISOString(),
-      notes: notes.trim() || undefined,
-      referenceId: referenceId.trim() || undefined,
+      transactionType: data.transactionType,
+      assetType: data.assetType,
+      quantity: data.quantity,
+      unitPrice: data.unitPrice,
+      transactionDate: new Date(data.transactionDate).toISOString(),
+      notes: data.notes?.trim() || undefined,
+      referenceId: data.referenceId?.trim() || undefined,
     });
 
-    setQuantity('1');
-    setUnitPrice('0');
-    setNotes('');
-    setReferenceId('');
+    reset();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-slate-900">Thêm giao dịch</h2>
@@ -84,8 +89,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-700">Loại giao dịch</span>
           <select
-            value={transactionType}
-            onChange={(event) => setTransactionType(event.target.value as TransactionType)}
+            {...register('transactionType')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
           >
             {transactionTypes.map((option) => (
@@ -94,13 +98,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               </option>
             ))}
           </select>
+          {errors.transactionType && (
+            <p className="mt-1 text-sm text-red-600">{errors.transactionType.message}</p>
+          )}
         </label>
 
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-700">Asset type</span>
           <select
-            value={assetType}
-            onChange={(event) => setAssetType(event.target.value)}
+            {...register('assetType')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
           >
             {assetTypes.map((option) => (
@@ -109,16 +115,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               </option>
             ))}
           </select>
+          {errors.assetType && (
+            <p className="mt-1 text-sm text-red-600">{errors.assetType.message}</p>
+          )}
         </label>
 
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-700">Ngày giao dịch</span>
           <input
             type="date"
-            value={transactionDate}
-            onChange={(event) => setTransactionDate(event.target.value)}
+            {...register('transactionDate')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
           />
+          {errors.transactionDate && (
+            <p className="mt-1 text-sm text-red-600">{errors.transactionDate.message}</p>
+          )}
         </label>
 
         <label className="block">
@@ -127,10 +138,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             type="number"
             min="0"
             step="0.0001"
-            value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
+            {...register('quantity')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
           />
+          {errors.quantity && (
+            <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
+          )}
         </label>
 
         <label className="block">
@@ -139,18 +152,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             type="number"
             min="0"
             step="0.01"
-            value={unitPrice}
-            onChange={(event) => setUnitPrice(event.target.value)}
+            {...register('unitPrice')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
           />
+          {errors.unitPrice && (
+            <p className="mt-1 text-sm text-red-600">{errors.unitPrice.message}</p>
+          )}
         </label>
 
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-700">Reference ID</span>
           <input
             type="text"
-            value={referenceId}
-            onChange={(event) => setReferenceId(event.target.value)}
+            {...register('referenceId')}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
           />
         </label>
@@ -159,8 +173,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       <label className="mt-4 block">
         <span className="mb-2 block text-sm font-medium text-slate-700">Ghi chú</span>
         <textarea
-          value={notes}
-          onChange={(event) => setNotes(event.target.value)}
+          {...register('notes')}
           rows={3}
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none"
           placeholder="Mô tả ngắn cho giao dịch này"
