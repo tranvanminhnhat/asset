@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/investment-amount")
+@RequestMapping("/investment-recommendations")
 @RequiredArgsConstructor
 public class InvestmentRecommendationsController {
 

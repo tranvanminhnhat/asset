@@ -20,9 +20,9 @@ public class InvestmentAllocationMasterDeleteController {
     private final DeleteInvestmentAllocationMasterService deleteInvestmentAllocationMasterService;
     private final MessageService messageService;
 
-    @DeleteMapping("/{code}")
-    public ApiResponse<Void> delete(@PathVariable String code) {
-        deleteInvestmentAllocationMasterService.execute(code);
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(@PathVariable Long id) {
+        deleteInvestmentAllocationMasterService.execute(id);
         return ApiResponse.<Void>builder()
                 .message(DELETE_INFO_001, messageService.get(DELETE_INFO_001), SERVICE_NAME)
                 .build();

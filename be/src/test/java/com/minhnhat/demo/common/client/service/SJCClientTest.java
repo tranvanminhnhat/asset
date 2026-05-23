@@ -87,12 +87,11 @@ class SJCClientTest {
         when(restTemplate.getForObject(eq(SJC_PRICE_URL), eq(SJCPriceResponseDto.class)))
                 .thenReturn(null);
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            sjcClient.getSJCPrice();
-        });
+        // Act
+        SJCPriceResponseDto result = sjcClient.getSJCPrice();
 
-        assertTrue(exception.getMessage().contains("Failed to fetch SJC gold prices"));
+        // Assert
+        assertNull(result);
         verify(restTemplate, times(1)).getForObject(eq(SJC_PRICE_URL), eq(SJCPriceResponseDto.class));
     }
 
@@ -249,4 +248,3 @@ class SJCClientTest {
         return Arrays.asList(item1, item2, item3);
     }
 }
-

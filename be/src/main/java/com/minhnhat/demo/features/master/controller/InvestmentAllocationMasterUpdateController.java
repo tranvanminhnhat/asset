@@ -24,12 +24,12 @@ public class InvestmentAllocationMasterUpdateController {
     private final UpdateInvestmentAllocationMasterService updateInvestmentAllocationMasterService;
     private final MessageService messageService;
 
-    @PutMapping("/{code}")
+    @PutMapping("/{id}")
     public ApiResponse<InvestmentAllocationMasterResponse> update(
-            @PathVariable String code,
+            @PathVariable Long id,
             @Valid @RequestBody InvestmentAllocationMasterUpdateRequest request) {
         return ApiResponse.<InvestmentAllocationMasterResponse>builder()
-                .data(updateInvestmentAllocationMasterService.execute(code, request))
+                .data(updateInvestmentAllocationMasterService.execute(id, request))
                 .message(UPDATE_INFO_001, messageService.get(UPDATE_INFO_001), SERVICE_NAME)
                 .build();
     }

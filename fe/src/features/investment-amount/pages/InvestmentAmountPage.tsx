@@ -86,45 +86,50 @@ const InvestmentAmountPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white px-4 py-10">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-end mb-4">
+    <div className="min-h-screen bg-slate-50 px-4 py-10 animate-fade-up">
+      <div className="max-w-2xl mx-auto">
+        {/* Page header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Lập kế hoạch đầu tư</h1>
+            <p className="text-sm text-slate-500 mt-1">Chọn chiến lược và số tiền phù hợp với bạn</p>
+          </div>
           <LogoutButton />
         </div>
-        {/* Hero Section */}
-        <div className="mb-16 flex flex-col md:flex-row gap-8 items-center">
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">
-              Hành trình tích lũy tài sản của bạn bắt đầu từ đây
-            </h1>
-            <p className="text-slate-600 text-lg mb-6">
-              Khám phá cơn gió và sông đé được mục tiêu tài chính của bạn. Công cụ của chúng tôi cung cấp các dự kiến với hiển thị quy hoạch.
-            </p>
-            <button
-              onClick={scrollToResults}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-8 rounded-lg transition flex items-center gap-2"
-            >
-              Bắt đầu lập kế hoạch ngay →
-            </button>
-          </div>
-          <div className="flex-1 hidden md:block">
-            <div className="w-full h-64 bg-linear-to-br from-slate-300 to-slate-400 rounded-lg"></div>
-          </div>
+
+        {/* Steps */}
+        <div className="flex items-center gap-2 mb-8">
+          {['Số tiền & Chiến lược', 'Xem gợi ý', 'Xác nhận'].map((step, i) => (
+            <React.Fragment key={step}>
+              <div className={`flex items-center gap-2 text-xs font-medium ${i === 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                  {i + 1}
+                </span>
+                {step}
+              </div>
+              {i < 2 && <div className="flex-1 h-px bg-slate-200" />}
+            </React.Fragment>
+          ))}
         </div>
 
-        <div id="results-section" className="bg-slate-50 rounded-lg p-8 mb-8">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7 space-y-7">
           {/* Risk Selection */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Xác định hộ số tài chính của bạn</h2>
-            <p className="text-slate-600 mb-6">
-              Hãy cho chúng tôi biết về chi phí và thích rủi ro của bạn để chúng tôi có thể đưa ra các đề xuất phù hợp.
-            </p>
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Chiến lược đầu tư</h2>
+            <p className="text-xs text-slate-500 mb-4">Chọn mức độ rủi ro phù hợp với mục tiêu của bạn</p>
+
             {isLoadingTypeOptions && (
-              <p className="text-sm text-slate-600">Đang tải lựa chọn chiến lược đầu tư...</p>
+              <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+                <svg className="w-4 h-4 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Đang tải chiến lược đầu tư...
+              </div>
             )}
 
             {isTypeOptionsError && !isLoadingTypeOptions && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 Không thể tải dữ liệu chiến lược đầu tư.
               </div>
             )}
@@ -134,7 +139,7 @@ const InvestmentAmountPage: React.FC = () => {
                 name="type"
                 control={control}
                 render={({ field }) => (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {investmentTypeOptions.map((option) => (
                       <RiskOption
                         key={option.type}
@@ -150,55 +155,70 @@ const InvestmentAmountPage: React.FC = () => {
             )}
           </div>
 
-          <hr className="my-8" />
+          <div className="border-t border-slate-100" />
 
           {/* Amount Input */}
-          <div className="mb-8">
-            <label className="block text-sm font-semibold text-slate-900 mb-3">
-              💰 Nhập số tiền đầu tư
-            </label>
+          <div>
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Số tiền đầu tư</h2>
+            <p className="text-xs text-slate-500 mb-4">Nhập số tiền bạn muốn đầu tư</p>
+
             <div className="relative">
               <input
                 type="text"
                 inputMode="numeric"
                 {...register('amount')}
-                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-semibold"
-                placeholder="Ví dụ: 10000000"
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 pr-10 text-base font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition hover:border-slate-400"
+                placeholder="Ví dụ: 10,000,000"
               />
-              <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-600">₫</span>
-              {amount && !Number.isNaN(normalizedAmount) && (
-                <p className="mt-3 text-sm text-slate-600">
-                  Số tiền dự kiến: {formatCurrency(normalizedAmount)}
-                </p>
-              )}
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">₫</span>
             </div>
-            {errors.amount && <p className="mt-2 text-sm text-red-600">{errors.amount.message}</p>}
+
+            {amount && !Number.isNaN(normalizedAmount) && normalizedAmount > 0 && (
+              <p className="mt-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                Số tiền: <span className="font-semibold">{formatCurrency(normalizedAmount)}</span>
+              </p>
+            )}
+            {errors.amount && <p className="mt-2 text-xs text-red-600">{errors.amount.message}</p>}
           </div>
 
-          <hr className="my-8" />
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-        </div>
-
-        <div className="flex gap-4 justify-between">
-          <button
-            onClick={() => router.back()}
-            className="px-6 py-3 border border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 transition"
-          >
-            Đặt lại
-          </button>
-          <button
-            onClick={handleSubmit(handleContinue)}
-            disabled={isLoading || isLoadingTypeOptions || !investmentTypeOptions.length}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition disabled:opacity-50"
-          >
-            {isLoading ? 'Đang xử lý...' : 'Tiếp tục →'}
-          </button>
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-5 py-2.5 border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition"
+            >
+              Quay lại
+            </button>
+            <button
+              onClick={handleSubmit(handleContinue)}
+              disabled={isLoading || isLoadingTypeOptions || !investmentTypeOptions.length}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  Xem gợi ý đầu tư
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -206,3 +226,4 @@ const InvestmentAmountPage: React.FC = () => {
 };
 
 export default InvestmentAmountPage;
+

@@ -1,9 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema, RegisterForm } from '../validation/register.schema';
+import { registerSchema, type RegisterForm } from '../validation/register.schema';
 import { useRegister } from '../hooks/useRegister';
+import Input from '@/common/components/ui/Input';
+import Button from '@/common/components/ui/Button';
 
 const RegisterForm: React.FC = () => {
   const { handleRegister, isLoading, isError, isSuccess } = useRegister();
@@ -21,91 +23,77 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md w-full mx-auto rounded-[32px] bg-white border border-slate-100 p-8 shadow-2xl">
+    <div className="w-full max-w-sm">
+      {/* Logo */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#fff4d9] text-[#b28715] mb-4 shadow-sm">
-          <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor" aria-hidden="true">
-            <path d="M12 2l1.9 4.85 5.35.78-3.85 3.76.91 5.32L12 14.77l-4.31 2.27.91-5.32L4.75 7.63l5.35-.78L12 2z" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-600 mb-4 shadow-lg shadow-emerald-600/30">
+          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
           </svg>
         </div>
-        <p className="text-3xl font-semibold text-emerald-950">Đăng ký MoneyPilot</p>
-        <p className="mt-3 text-sm text-slate-500 leading-6">
-          Bắt đầu một hành trình phát triển tài chính bền vững và thịnh vượng.
-        </p>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Tạo tài khoản</h1>
+        <p className="mt-1.5 text-sm text-slate-500">Bắt đầu hành trình đầu tư với MoneyPilot</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-            Địa chỉ Email
-          </label>
-          <input
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Input
+            label="Địa chỉ Email"
             id="email"
             type="email"
             {...register('email')}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+            error={errors.email?.message}
             placeholder="email@example.com"
           />
-          {errors.email && (
-            <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
-          )}
-        </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-            Mật khẩu
-          </label>
-          <input
+          <Input
+            label="Mật khẩu"
             id="password"
             type="password"
             {...register('password')}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-            placeholder="********"
+            error={errors.password?.message}
+            placeholder="••••••••"
           />
-          {errors.password && (
-            <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
-          )}
-        </div>
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">
-            Xác nhận mật khẩu
-          </label>
-          <input
+          <Input
+            label="Xác nhận mật khẩu"
             id="confirmPassword"
             type="password"
             {...register('confirmPassword')}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-            placeholder="********"
+            error={errors.confirmPassword?.message}
+            placeholder="••••••••"
           />
-          {errors.confirmPassword && (
-            <p className="mt-2 text-sm text-red-600">{errors.confirmPassword.message}</p>
+
+          <Button
+            type="submit"
+            variant="secondary"
+            size="lg"
+            loading={isLoading}
+            className="w-full mt-1"
+          >
+            {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
+          </Button>
+
+          {isError && (
+            <p className="text-center text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg py-2.5">
+              Đăng ký không thành công. Vui lòng thử lại.
+            </p>
           )}
+          {isSuccess && (
+            <p className="text-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg py-2.5">
+              Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.
+            </p>
+          )}
+        </form>
+
+        <div className="mt-5 pt-5 border-t border-slate-100 text-center">
+          <p className="text-sm text-slate-500">
+            Đã có tài khoản?{' '}
+            <Link href="/login" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+              Đăng nhập
+            </Link>
+          </p>
         </div>
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full rounded-2xl bg-emerald-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
-        </button>
-
-        {isError && (
-          <p className="text-center text-sm text-red-600">Đăng ký không thành công. Vui lòng thử lại.</p>
-        )}
-        {isSuccess && (
-          <p className="text-center text-sm text-emerald-700">Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.</p>
-        )}
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-slate-500">
-          Đã có tài khoản?{' '}
-          <Link href="/login" className="text-emerald-600 hover:text-emerald-800 font-medium">
-            Đăng nhập
-          </Link>
-        </p>
       </div>
     </div>
   );

@@ -49,55 +49,54 @@ const PortfolioSelectionPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#eff8f1] px-4 py-10">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-end mb-4">
+    <div className="min-h-screen bg-slate-50 px-4 py-10 animate-fade-up">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Chọn danh mục đầu tư</h1>
+            <p className="text-sm text-slate-500 mt-1">Chọn chiến lược phù hợp với mục tiêu của bạn</p>
+          </div>
           <LogoutButton />
-        </div>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-3">Phân Bổ Danh Mục Đầu Tư</h1>
-          <p className="text-slate-600">
-            Dựa trên hồ sơ của bạn, chúng tôi đề xuất phân bổ tài sản phù hợp.
-          </p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-            <div className="mb-10">
-              <h2 className="text-xl font-semibold text-slate-900 mb-2">Chọn danh mục đầu tư</h2>
-              <p className="text-sm text-slate-600 mb-4">
-                Lựa chọn phân bổ phù hợp với mục tiêu tài chính của bạn.
-              </p>
-              <Controller
-                name="selectedPortfolio"
-                control={control}
-                render={({ field }) => (
-                  <PortfolioSelector
-                    options={PORTFOLIO_OPTIONS}
-                    selectedId={field.value}
-                    onSelect={field.onChange}
-                  />
-                )}
-              />
-              {errors.selectedPortfolio && (
-                <p className="mt-2 text-sm text-red-600">{errors.selectedPortfolio.message}</p>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7 mb-6">
+            <h2 className="text-base font-semibold text-slate-900 mb-1">Danh mục đầu tư</h2>
+            <p className="text-xs text-slate-500 mb-5">Mỗi danh mục có mức độ rủi ro và lợi nhuận kỳ vọng khác nhau</p>
+
+            <Controller
+              name="selectedPortfolio"
+              control={control}
+              render={({ field }) => (
+                <PortfolioSelector
+                  options={PORTFOLIO_OPTIONS}
+                  selectedId={field.value}
+                  onSelect={field.onChange}
+                />
               )}
-            </div>
+            />
+            {errors.selectedPortfolio && (
+              <p className="mt-3 text-xs text-red-600">{errors.selectedPortfolio.message}</p>
+            )}
           </div>
 
-          <div className="flex gap-4 justify-between">
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-6 py-3 border border-slate-300 text-slate-900 font-semibold rounded-lg hover:bg-slate-50 transition"
+              className="px-5 py-2.5 border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition"
             >
               Quay lại
             </button>
             <button
               type="submit"
-              className="px-6 py-3 rounded-lg font-semibold transition bg-blue-600 text-white hover:bg-blue-700"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl transition"
             >
               Tiếp tục
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </button>
           </div>
         </form>

@@ -21,10 +21,10 @@ public class InvestmentAllocationMasterGetByIdController {
     private final GetInvestmentAllocationMasterByIdService getInvestmentAllocationMasterByIdService;
     private final MessageService messageService;
 
-    @GetMapping("/{code}")
-    public ApiResponse<InvestmentAllocationMasterResponse> getById(@PathVariable String code) {
+    @GetMapping("/{id}")
+    public ApiResponse<InvestmentAllocationMasterResponse> getById(@PathVariable Long id) {
         return ApiResponse.<InvestmentAllocationMasterResponse>builder()
-                .data(getInvestmentAllocationMasterByIdService.execute(code))
+                .data(getInvestmentAllocationMasterByIdService.execute(id))
                 .message(GET_BY_ID_INFO_001, messageService.get(GET_BY_ID_INFO_001), SERVICE_NAME)
                 .build();
     }
