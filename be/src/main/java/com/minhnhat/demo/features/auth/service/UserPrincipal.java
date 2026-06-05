@@ -1,6 +1,6 @@
 package com.minhnhat.demo.features.auth.service;
 
-import com.minhnhat.demo.features.auth.entity.UserEntity;
+import com.minhnhat.demo.common.db.entity.UserEntity;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;

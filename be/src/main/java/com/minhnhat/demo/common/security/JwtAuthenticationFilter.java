@@ -1,0 +1,65 @@
+package com.minhnhat.demo.common.security;
+
+import com.minhnhat.demo.common.db.entity.UserEntity;
+import com.minhnhat.demo.common.db.repository.UserRepository;
+import com.minhnhat.demo.features.auth.service.UserPrincipal;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final UserRepository userRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final String SECRET_KEY = "secret-key-demo-secret-key-demo-secret-key-demo";
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        try {
+            String jwt = getJwtFromRequest(request);
+
+            if (jwt != null && jwtTokenProvider.validateToken(jwt)) {
+                String userId = jwtTokenProvider.getUserIdFromToken(jwt);
+                String email = jwtTokenProvider.getEmailFromToken(jwt);
+
+                // Load user from database
+                UserEntity userEntity = userRepository.findById(userId).orElse(null);
+
+                if (userEntity != null) {
+                    UserPrincipal principal = UserPrincipal.from(userEntity);
+                    Authentication authentication = new UsernamePasswordAuthenticationToken(
+                            principal, null, principal.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("Set SecurityContext for user: {}", email);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Could not set user authentication in security context", e);
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
+    }
+}
+

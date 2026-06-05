@@ -1,4 +1,4 @@
-import { baseApi } from '@/src/store/api/baseApi';
+import { baseApi } from '@/store/api/baseApi';
 import { LoginRequest } from '../type/login.request';
 import { LoginResponse } from '../type/login.response';
 

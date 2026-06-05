@@ -1,6 +1,6 @@
 import { RegisterRequest } from '../type/register.request';
 import { RegisterResponse } from '../type/register.response';
-import { baseApi } from '@/src/store/api/baseApi';
+import { baseApi } from '@/store/api/baseApi';
 
 export const registerApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

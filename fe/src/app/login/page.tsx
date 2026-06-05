@@ -1,5 +1,5 @@
 import React from 'react';
-import LoginPage from '@/src/features/login/pages/LoginPage';
+import LoginPage from '@/features/login/pages/LoginPage';
 
 const Page: React.FC = () => {
   return <LoginPage />;

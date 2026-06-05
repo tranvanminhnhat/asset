@@ -1,89 +1,40 @@
 package com.minhnhat.demo.features.dashboard.service;
 
-import com.minhnhat.demo.common.security.SecurityUtils;
-import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
-import com.minhnhat.demo.features.portfolio.entity.PortfolioEntity;
-import com.minhnhat.demo.features.portfolio.repository.PortfolioRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.List;
-
-@Service
-@RequiredArgsConstructor
-@Slf4j
+/**
+ * DEPRECATED: Use DashboardService instead
+ * 
+ * This service should be removed as it uses incorrect data source (PortfolioEntity)
+ * and has calculation errors.
+ * 
+ * The new DashboardService correctly fetches data from:
+ * - investment_plans
+ * - investment_plan_allocations
+ * - asset_prices
+ * 
+ * And performs correct financial calculations with BigDecimal precision.
+ */
+@Deprecated(since = "2026-04-27", forRemoval = true)
 public class GetDashboardService {
 
-    private final PortfolioRepository portfolioRepository;
-
-    private final SecurityUtils currentUserService;
-
+    /**
+     * This service is deprecated.
+     * Use DashboardService (IDashboardService) instead.
+     * 
+     * The new service:
+     * - Fetches data from correct tables (investment_plans, investment_plan_allocations, asset_prices)
+     * - Uses optimized native query (no N+1 problem)
+     * - Calculates currentValue = quantity × currentPrice from asset_prices
+     * - Properly calculates profit/loss and profitRate
+     * - Uses BigDecimal for all financial calculations
+     * - Includes comprehensive error handling
+     */
     public DashboardResponse getDashboard() {
-
-        List<PortfolioEntity> portfolioEntity = loadData();
-
-        return createResponse(portfolioEntity);
-    }
-
-    private List<PortfolioEntity> loadData(){
-//        CurrentUserInfo currentUser = currentUserService.getCurrentUser();
-        return portfolioRepository.findByUserId("1");
-    }
-
-    private DashboardResponse createResponse(List<PortfolioEntity> portfolioEntities){
-        if (portfolioEntities == null || portfolioEntities.isEmpty()) {
-            assert portfolioEntities != null;
-            return DashboardResponse.builder()
-                    .summary(createSummary(portfolioEntities))
-                    .portfolios(List.of())
-                    .build();
-        }
-        return DashboardResponse.builder()
-                .summary(createSummary(portfolioEntities))
-                .portfolios(createPortfolios(portfolioEntities))
-                .build();
-    }
-
-    private List<DashboardResponse.PortfolioItem> createPortfolios(List<PortfolioEntity> portfolioEntities) {
-        return portfolioEntities.stream()
-                .map(entity -> DashboardResponse.PortfolioItem.builder()
-                        .id(entity.getId())
-                        .name(entity.getName())
-                        .type(entity.getType())
-                        .purchaseValue(entity.getPurchaseValue())
-                        .currentValue(entity.getCurrentValue())
-                        .profit(entity.getCurrentValue().subtract(entity.getPurchaseValue()))
-                        .isProfit(entity.getCurrentValue().compareTo(entity.getPurchaseValue()) > 0)
-                        .build())
-                .toList();
-    }
-
-    private DashboardResponse.Summary createSummary(List<PortfolioEntity> portfolioEntities){
-
-        BigDecimal totalCurrentValue = portfolioEntities.stream()
-                .map(PortfolioEntity::getCurrentValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalPurchaseValue = portfolioEntities.stream()
-                .map(PortfolioEntity::getPurchaseValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalProfit = totalCurrentValue.subtract(totalPurchaseValue);
-
-        BigDecimal profitPercentage = totalPurchaseValue.compareTo(BigDecimal.ZERO) > 0
-                ? totalProfit.divide(totalPurchaseValue, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100))
-                : BigDecimal.ZERO;
-
-        return DashboardResponse.Summary.builder()
-                .totalCurrentValue(totalCurrentValue)
-                .totalPurchaseValue(totalPurchaseValue)
-                .totalProfit(totalProfit)
-                .profitPercentage(profitPercentage)
-                .currency("USD")
-                .build();
+        throw new UnsupportedOperationException(
+            "GetDashboardService is deprecated. Use DashboardService (implement IDashboardService) instead. " +
+            "The new service fetches data from investment_plans, investment_plan_allocations, and asset_prices tables."
+        );
     }
 }
 

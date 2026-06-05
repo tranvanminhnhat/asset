@@ -19,4 +19,8 @@ public class AuthConstant {
     public static final String LOGIN_INFO_001 = "auth.login.info.001";
 
     public static final String REGISTER_INFO_001 = "auth.register.info.001";
+
+    public static final String LOGOUT_INFO_001 = "auth.logout.info.001";
+
+    public static final String REFRESH_TOKEN_INFO_001 = "auth.refresh-token.info.001";
 }

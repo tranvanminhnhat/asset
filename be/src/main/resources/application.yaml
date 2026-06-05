@@ -9,7 +9,7 @@ spring:
 
     jpa:
       hibernate:
-        ddl-auto: none   # none | update | create | create-drop
+        ddl-auto: update   # none | update | create | create-drop
       show-sql: true
       properties:
         hibernate:
@@ -35,4 +35,6 @@ spring:
 app:
   frontend:
     login-url: http://localhost:3000/login
-
+  api:
+    sjc:
+      price-url: https://sjc.com.vn/GoldPrice/Services/PriceService.ashx
