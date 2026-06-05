@@ -1,110 +1,28 @@
-import { useGetInvestmentTypeOptionsQuery, useGetRecommendationMutation } from '../services/investment-amount.api';
+import { useGetInvestmentTypeOptionsQuery, useGetInvestmentRecommendationsMutation } from '../services/investment-amount.api';
 import {
   AllocationMasterItem,
-  AllocationMasterListResponse,
   InvestmentAmountRequest,
-  InvestmentAmountResponse,
-  InvestmentType,
+  InvestmentRecommendationsData,
   InvestmentTypeOption,
-  InvestmentTypeOptionsData,
-  InvestmentTypeOptionsResponse,
-  RecommendationResponse,
 } from '../type/investment-amount.type';
 
-const INVESTMENT_TYPE_LABELS: Record<InvestmentType, string> = {
-  SAFE: 'An Toan',
-  BALANCED: 'Can Bang',
-  GROWTH: 'Tang Truong',
+const ASSET_TYPE_LABELS: Record<string, string> = {
+  STOCK: 'Cổ phiếu',
+  EMERGENCY: 'Quỹ dự phòng',
+  GOLD: 'Vàng',
+  ETF: 'ETF',
 };
 
-const INVESTMENT_TYPE_ORDER: Record<InvestmentType, number> = {
-  SAFE: 1,
-  BALANCED: 2,
-  GROWTH: 3,
-};
-
-const isInvestmentType = (code: string): code is InvestmentType => {
-  return code === 'SAFE' || code === 'BALANCED' || code === 'GROWTH';
-};
-
-const toOption = (item: AllocationMasterItem): InvestmentTypeOption | null => {
-  if (!isInvestmentType(item.code)) {
-    return null;
-  }
+const toOption = (item: AllocationMasterItem): InvestmentTypeOption => {
+  const description = item.details
+    .map((d) => `${ASSET_TYPE_LABELS[d.assetType] ?? d.assetType} ${d.percentage}%`)
+    .join(' • ');
 
   return {
     type: item.code,
-    label: INVESTMENT_TYPE_LABELS[item.code],
-    description: `Co phieu ${item.stockPercent}% • Quy du phong ${item.emergencyPercent}% • Vang ${item.goldPercent}% • ETF ${item.etfPercent}%`,
+    label: item.name,
+    description,
   };
-};
-
-const getRecommendationPayload = (
-  response: InvestmentAmountResponse | RecommendationResponse,
-): RecommendationResponse | null => {
-  if ('data' in response) {
-    return response.data;
-  }
-
-  return response;
-};
-
-const getInvestmentTypeOptionsPayload = (
-  response:
-    | AllocationMasterListResponse
-    | AllocationMasterItem[]
-    | InvestmentTypeOptionsResponse
-    | InvestmentTypeOptionsData
-    | InvestmentTypeOption[]
-    | undefined,
-): InvestmentTypeOption[] => {
-  if (!response) {
-    return [];
-  }
-
-  if (Array.isArray(response)) {
-    if (!response.length) {
-      return [];
-    }
-
-    if ('type' in response[0]) {
-      return response as InvestmentTypeOption[];
-    }
-
-    return (response as AllocationMasterItem[])
-      .map(toOption)
-      .filter((option): option is InvestmentTypeOption => Boolean(option))
-      .sort((a, b) => INVESTMENT_TYPE_ORDER[a.type] - INVESTMENT_TYPE_ORDER[b.type]);
-  }
-
-  if ('data' in response) {
-    const data = response.data;
-
-    if (Array.isArray(data)) {
-      if (!data.length) {
-        return [];
-      }
-
-      if ('type' in data[0]) {
-        return data as InvestmentTypeOption[];
-      }
-
-      return (data as AllocationMasterItem[])
-        .map(toOption)
-        .filter((option): option is InvestmentTypeOption => Boolean(option))
-        .sort((a, b) => INVESTMENT_TYPE_ORDER[a.type] - INVESTMENT_TYPE_ORDER[b.type]);
-    }
-
-    if (data && Array.isArray(data.options)) {
-      return data.options;
-    }
-  }
-
-  if ('options' in response && Array.isArray(response.options)) {
-    return response.options;
-  }
-
-  return [];
 };
 
 export const useInvestmentAmount = () => {
@@ -113,20 +31,13 @@ export const useInvestmentAmount = () => {
     isLoading: isLoadingTypeOptions,
     isError: isTypeOptionsError,
   } = useGetInvestmentTypeOptionsQuery();
-  const [getRecommendation, { isLoading, error }] = useGetRecommendationMutation();
+  const [getInvestmentRecommendations, { isLoading, error }] = useGetInvestmentRecommendationsMutation();
 
-  const investmentTypeOptions = getInvestmentTypeOptionsPayload(investmentTypeOptionsResponse);
+  const investmentTypeOptions = investmentTypeOptionsResponse?.data?.map(toOption) ?? [];
 
-  const submitInvestmentAmount = async (request: InvestmentAmountRequest): Promise<RecommendationResponse | null> => {
-    const response = await getRecommendation(request).unwrap();
-
-    const payload = getRecommendationPayload(response);
-
-    if (!payload) {
-      return null;
-    }
-
-    return payload;
+  const submitInvestmentAmount = async (request: InvestmentAmountRequest): Promise<InvestmentRecommendationsData | null> => {
+    const response = await getInvestmentRecommendations(request).unwrap();
+    return response.data ?? null;
   };
 
   return {

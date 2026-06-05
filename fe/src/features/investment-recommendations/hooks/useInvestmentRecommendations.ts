@@ -43,27 +43,15 @@ export const useInvestmentRecommendations = () => {
       return null;
     }
 
-    const totalAmount = data.allocations.reduce((sum, allocation) => {
-      const quantity = typeof allocation.quantity === 'number' && Number.isFinite(allocation.quantity)
-        ? Math.max(1, Math.floor(allocation.quantity))
-        : 1;
-      return sum + allocation.amount * quantity;
-    }, 0);
-
     const request: InvestmentCompleteRequest = {
-      amount: totalAmount > 0 ? totalAmount : data.amount,
+      amount: data.amount,
       type: data.type,
       allocations: data.allocations.map((allocation) => ({
         type: allocation.type,
-        amount: Number.isFinite(allocation.amount) ? allocation.amount : 0,
-        percent: Number.isFinite(allocation.percent) ? allocation.percent : 0,
-        residualAmount:
-          typeof allocation.residualAmount === 'number' && Number.isFinite(allocation.residualAmount)
-            ? allocation.residualAmount
-            : 0,
-        quantity: typeof allocation.quantity === 'number' && Number.isFinite(allocation.quantity)
-          ? Math.max(1, Math.floor(allocation.quantity))
-          : 1,
+        amount: allocation.amount,
+        percent: allocation.percent,
+        residualAmount: allocation.residualAmount,
+        quantity: 1,
       })),
     };
 
