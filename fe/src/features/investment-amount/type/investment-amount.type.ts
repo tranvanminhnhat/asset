@@ -1,25 +1,25 @@
 // Investment Amount Types
-export type InvestmentType = 'SAFE' | 'BALANCED' | 'GROWTH';
 
 export interface InvestmentAmountRequest {
   amount: number;
-  type: InvestmentType;
+  type: string;
 }
 
 export interface Allocation {
   type: string;
   amount: number;
-  quantity?: number;
   percent: number;
-  carryOverAmount?: AmountLike;
-  investableAmount?: AmountLike;
-  residualAmount?: AmountLike;
+  carryOverAmount: number;
+  investableAmount: number;
+  residualAmount: number;
 }
 
-export type AmountLike = number | string | null;
+export interface InvestmentRecommendationsData {
+  allocations: Allocation[];
+}
 
-export interface InvestmentAmountResponse {
-  data: RecommendationResponse;
+export interface InvestmentRecommendationsApiResponse {
+  data: InvestmentRecommendationsData;
   message: {
     code: string;
     message: string;
@@ -27,22 +27,29 @@ export interface InvestmentAmountResponse {
   };
 }
 
-export interface RecommendationResponse {
-  allocations: Allocation[];
-}
-
 export interface InvestmentTypeOption {
-  type: InvestmentType;
+  type: string;
   label: string;
   description: string;
 }
 
+export interface AllocationMasterDetail {
+  id: number;
+  strategyId: number;
+  assetType: string;
+  percentage: number;
+  minimumLotSizeAmount: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
 export interface AllocationMasterItem {
+  id: number;
   code: string;
-  stockPercent: number;
-  emergencyPercent: number;
-  goldPercent: number;
-  etfPercent: number;
+  name: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  details: AllocationMasterDetail[];
 }
 
 export interface AllocationMasterListResponse {
@@ -54,39 +61,4 @@ export interface AllocationMasterListResponse {
   };
 }
 
-export interface InvestmentTypeOptionsData {
-  options: InvestmentTypeOption[];
-}
 
-export interface InvestmentTypeOptionsResponse {
-  data: InvestmentTypeOptionsData | InvestmentTypeOption[];
-  message?: {
-    code: string;
-    message: string;
-    service: string;
-  };
-}
-
-export interface InvestmentGoal {
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  monthlyAmount: number;
-  investmentPeriod: number;
-}
-
-export interface InvestmentPlan {
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  monthlyAmount: number;
-  investmentPeriod: number;
-  projectedReturn: number;
-  totalAmount: number;
-}
-
-export interface ProjectionResult {
-  riskLevel: string;
-  riskDescription: string;
-  monthlyAmount: number;
-  investmentPeriod: number;
-  totalAmount: number;
-  projectedReturn: number;
-  projectedValue: number;
-}
