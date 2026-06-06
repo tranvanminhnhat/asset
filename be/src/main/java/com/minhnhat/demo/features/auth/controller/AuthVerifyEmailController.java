@@ -19,7 +19,8 @@ public class AuthVerifyEmailController {
 
     private final VerifyEmailService verifyEmailService;
 
-    @Value("${app.frontend.login-url:http://localhost:3000/login}")
+    //    @Value("${app.frontend.login-url:http://localhost:3000/login}")
+    @Value("${app.frontend.login-url:https://asset-ashen.vercel.app/login}")
     private String frontendLoginUrl;
 
     @GetMapping("/verify-email")
