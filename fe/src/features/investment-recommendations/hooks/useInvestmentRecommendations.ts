@@ -1,76 +1,42 @@
-import { useState } from 'react';
-import { InvestmentData } from '../type/investment-recommendations.type';
-import { useCompleteInvestmentMutation } from '../services/investment-complete.api';
-import {
-  InvestmentCompleteApiResponse,
-  InvestmentCompleteRequest,
-  InvestmentCompleteResponse,
-} from '../type/investment-complete.type';
+import { useGetSessionDetailQuery, useReviewSessionMutation } from '../services/investment-session.api';
+import { ReviewSessionResponse, SessionDetailResponse } from '../type/investment-recommendations.type';
 
-const INVESTMENT_COMPLETE_STORAGE_KEY = 'investmentCompleteResult';
-
-const getCompletePayload = (
-  response: InvestmentCompleteApiResponse | InvestmentCompleteResponse,
-): InvestmentCompleteResponse | null => {
-  const candidate = 'data' in response ? response.data : response;
-
-  if (!candidate || typeof candidate !== 'object') {
-    return null;
-  }
-
-  if (!('sessionId' in candidate) || !('allocations' in candidate) || !Array.isArray(candidate.allocations)) {
-    return null;
-  }
-
-  return candidate as InvestmentCompleteResponse;
+const getSessionId = (): number | null => {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem('investmentSessionId');
+  if (!raw) return null;
+  const id = Number(raw);
+  return Number.isNaN(id) ? null : id;
 };
 
 export const useInvestmentRecommendations = () => {
-  const getInitialData = () => {
-    if (typeof window !== 'undefined') {
-      const storedData = localStorage.getItem('investmentAllocations');
-      return storedData ? (JSON.parse(storedData) as InvestmentData) : null;
-    }
-    return null;
-  };
+  const sessionId = getSessionId();
 
-  const [data] = useState<InvestmentData | null>(getInitialData);
-  const [isLoading] = useState(false);
-  const [completeInvestment, { isLoading: isSubmitting, isError, error }] = useCompleteInvestmentMutation();
+  const {
+    data: sessionDetailResponse,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetSessionDetailQuery(sessionId!, { skip: !sessionId });
 
-  const submitInvestmentComplete = async (): Promise<InvestmentCompleteResponse | null> => {
-    if (!data) {
-      return null;
-    }
+  const [reviewSession, { isLoading: isReviewing, isError: isReviewError }] = useReviewSessionMutation();
 
-    const request: InvestmentCompleteRequest = {
-      amount: data.amount,
-      type: data.type,
-      allocations: data.allocations.map((allocation) => ({
-        type: allocation.type,
-        amount: allocation.amount,
-        percent: allocation.percent,
-        residualAmount: allocation.residualAmount,
-        quantity: 1,
-      })),
-    };
+  const sessionDetail: SessionDetailResponse | null = sessionDetailResponse?.data ?? null;
 
-    const response = await completeInvestment(request).unwrap();
-    const payload = getCompletePayload(response);
-
-    if (payload) {
-      localStorage.setItem(INVESTMENT_COMPLETE_STORAGE_KEY, JSON.stringify(payload));
-    }
-
-    return payload;
+  const submitReview = async (): Promise<ReviewSessionResponse | null> => {
+    if (!sessionId) return null;
+    const response = await reviewSession(sessionId).unwrap();
+    return response.data ?? null;
   };
 
   return {
-    data,
+    sessionId,
+    sessionDetail,
     isLoading,
-    isSubmitting,
     isError,
-    error,
-    submitInvestmentComplete,
+    isReviewing,
+    isReviewError,
+    refetch,
+    submitReview,
   };
 };

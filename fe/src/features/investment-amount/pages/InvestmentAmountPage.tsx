@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/formatters';
 import RiskOption from '../components/RiskOption';
 import { useInvestmentAmount } from '../hooks/useInvestmentAmount';
 import LogoutButton from '@/features/logout/components/LogoutButton';
-import { InvestmentAmountRequest } from '../type/investment-amount.type';
+import { CreateSessionRequest } from '../type/investment-amount.type';
 import { investmentAmountSchema, InvestmentAmountFormValues } from '../validation/investment-amount.schema';
 
 const InvestmentAmountPage: React.FC = () => {
@@ -58,22 +58,15 @@ const InvestmentAmountPage: React.FC = () => {
       return;
     }
 
-    const request: InvestmentAmountRequest = {
-      amount: parsedAmount,
-      type: formValues.type,
+    const request: CreateSessionRequest = {
+      strategyCode: formValues.type,
+      totalAmount: parsedAmount,
     };
 
     const response = await submitInvestmentAmount(request);
 
     if (response) {
-      localStorage.setItem(
-        'investmentAllocations',
-        JSON.stringify({
-          allocations: response.allocations,
-          type: formValues.type,
-          amount: parsedAmount,
-        }),
-      );
+      localStorage.setItem('investmentSessionId', String(response.sessionId));
       router.push('/investment-recommendations');
     }
   };

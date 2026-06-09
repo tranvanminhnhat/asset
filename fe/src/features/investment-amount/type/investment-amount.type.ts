@@ -1,26 +1,24 @@
 // Investment Amount Types
 
-export interface InvestmentAmountRequest {
-  amount: number;
-  type: string;
+// Session-based investment workflow
+export interface CreateSessionRequest {
+  strategyCode: string;
+  totalAmount: number;
 }
 
-export interface Allocation {
-  type: string;
-  amount: number;
-  percent: number;
-  carryOverAmount: number;
-  investableAmount: number;
-  residualAmount: number;
+export interface CreateSessionResponse {
+  sessionId: number;
+  userId: string;
+  strategyCode: string;
+  totalAmount: number;
+  status: string;
+  currentStep: string;
+  createdAt: string;
 }
 
-export interface InvestmentRecommendationsData {
-  allocations: Allocation[];
-}
-
-export interface InvestmentRecommendationsApiResponse {
-  data: InvestmentRecommendationsData;
-  message: {
+export interface CreateSessionApiResponse {
+  data: CreateSessionResponse;
+  message?: {
     code: string;
     message: string;
     service: string;

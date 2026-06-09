@@ -16,8 +16,8 @@ public class GetAssetPriceService {
     private final AssetPriceRepository assetPriceRepository;
 
     @Transactional(readOnly = true)
-    public Optional<BigDecimal> execute(String assetType) {
-        return assetPriceRepository.findById(assetType)
+    public Optional<BigDecimal> execute(Long priceId) {
+        return assetPriceRepository.findById(priceId)
                 .map(AssetPriceEntity::getBuyPrice);
     }
 }

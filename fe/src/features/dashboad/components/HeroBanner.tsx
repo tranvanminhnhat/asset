@@ -1,5 +1,6 @@
 ﻿'use client';
 import React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LogoutButton from '@/features/logout/components/LogoutButton';
 
@@ -54,6 +55,12 @@ const HeroBanner: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </button>
+              <Link
+                href="/investment-plans"
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 border border-white/20"
+              >
+                Kế hoạch của tôi
+              </Link>
             </div>
           </div>
 

@@ -405,10 +405,13 @@ public class InvestmentRecommendationsService {
 
     /**
      * Lấy giá tài sản từ asset_prices table
+     * Note: Updates to use latest prices instead of assetType lookup
      */
     private BigDecimal loadAssetPrice(String assetType) {
         try {
-            return assetPriceRepository.findById(assetType)
+            // Return the latest prices for any active product
+            return assetPriceRepository.findAllLatestPrices().stream()
+                    .findFirst()
                     .map(AssetPriceEntity::getBuyPrice)
                     .orElse(BigDecimal.ZERO);
         } catch (Exception e) {
