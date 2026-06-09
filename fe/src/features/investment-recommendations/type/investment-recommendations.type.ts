@@ -1,55 +1,60 @@
-// Investment Recommendations Types
-import { Allocation } from '../../investment-amount/type/investment-amount.type';
+// Investment Recommendations Types - Session-based workflow
 
-export type { Allocation } from '../../investment-amount/type/investment-amount.type';
-
-export interface InvestmentData {
-  allocations: Allocation[];
-  type: string;
-  amount: number;
-}
-
-export interface FundAllocation {
-  id: string;
-  name: string;
-  type: string;
-  amount: number;
-  investableAmount: number;
-  residualAmount: number;
-  unitAmount: number;
-  carryOverAmount: number;
-  quantity: number;
-  totalAmount: number;
-  currency: string;
+export interface AllocationDetail {
+  allocationId: number;
+  assetType: string;
+  recommendedAmount: number;
   percentage: number;
-  description: string;
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'LOCKED';
+  investedAmount: number;
+  residualAmount: number;
+  selections: AssetSelection[];
 }
 
-export interface InvestmentPortfolio {
-  id: string;
-  title: string;
-  description: string;
+export interface AssetSelection {
+  selectionId: number;
+  assetCode: string;
+  assetName: string;
+  quantity: number;
+  buyPrice: number;
+  investedAmount: number;
+  createdAt: string;
+}
+
+export interface SessionDetailResponse {
+  sessionId: number;
+  userId: string;
+  strategyCode: string;
   totalAmount: number;
-  currency: string;
-  funds: FundAllocation[];
-  investmentStrategy: string;
+  status: string;
+  currentStep: string;
+  createdAt: string;
+  updatedAt: string;
+  allocations: AllocationDetail[];
 }
 
-export interface RecommendedStock {
-  id: string;
-  code: string;
-  name: string;
-  currentPrice: number;
-  estimatedPrice: number;
-  potentialReturn: number;
-  riskLevel: string;
-  advantages: string[];
-  risks: string[];
-  sector: string;
+export interface SessionDetailApiResponse {
+  data: SessionDetailResponse;
+  message?: {
+    code: string;
+    message: string;
+    service: string;
+  };
 }
 
-export interface StockRecommendation {
-  portfolio: InvestmentPortfolio;
-  recommendedStocks: RecommendedStock[];
-  allocationStrategy: string;
+export interface ReviewSessionResponse {
+  sessionId: number;
+  status: string;
+  totalInvested: number;
+  totalResidual: number;
+  updatedAt: string;
+}
+
+export interface ReviewSessionApiResponse {
+  data: ReviewSessionResponse;
+  message?: {
+    code: string;
+    message: string;
+    service: string;
+  };
 }

@@ -1,12 +1,12 @@
 import { baseApi } from '@/store/api/baseApi';
 import {
   AllocationMasterListResponse,
-  InvestmentAmountRequest,
-  InvestmentRecommendationsApiResponse,
+  CreateSessionApiResponse,
+  CreateSessionRequest,
 } from '../type/investment-amount.type';
 
 const INVESTMENT_TYPE_OPTIONS_URL = '/api/v1/allocation-master';
-const INVESTMENT_RECOMMENDATIONS_URL = '/investment-recommendations';
+const CREATE_SESSION_URL = '/api/v1/investment/session';
 
 export const investmentAmountApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -16,9 +16,9 @@ export const investmentAmountApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
     }),
-    getInvestmentRecommendations: builder.mutation<InvestmentRecommendationsApiResponse, InvestmentAmountRequest>({
+    createInvestmentSession: builder.mutation<CreateSessionApiResponse, CreateSessionRequest>({
       query: (body) => ({
-        url: INVESTMENT_RECOMMENDATIONS_URL,
+        url: CREATE_SESSION_URL,
         method: 'POST',
         body,
       }),
@@ -26,4 +26,7 @@ export const investmentAmountApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetInvestmentTypeOptionsQuery, useGetInvestmentRecommendationsMutation } = investmentAmountApi;
+export const {
+  useGetInvestmentTypeOptionsQuery,
+  useCreateInvestmentSessionMutation,
+} = investmentAmountApi;

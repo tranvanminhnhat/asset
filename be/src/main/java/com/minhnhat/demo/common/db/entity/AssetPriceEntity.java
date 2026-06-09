@@ -7,7 +7,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "asset_prices")
+@Table(name = "asset_prices", indexes = {
+    @Index(name = "idx_price_product", columnList = "product_id"),
+    @Index(name = "idx_price_latest", columnList = "is_latest"),
+    @Index(name = "idx_price_date", columnList = "price_date")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,27 +20,32 @@ import java.time.LocalDateTime;
 public class AssetPriceEntity {
 
     @Id
-    @Column(name = "asset_type", length = 50, nullable = false)
-    private String assetType;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
 
     @Column(name = "buy_price", nullable = false, precision = 19, scale = 6)
     private BigDecimal buyPrice;
 
-    @Column(name = "sell_price", precision = 10, scale = 0)
+    @Column(name = "sell_price", precision = 19, scale = 6)
     private BigDecimal sellPrice;
 
-    @Column(name = "created_at")
+    @Column(name = "price_date")
+    private LocalDateTime priceDate;
+
+    @Column(name = "is_latest")
+    private Boolean isLatest;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
+
+    @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
 
     @PreUpdate
     protected void onUpdate() {

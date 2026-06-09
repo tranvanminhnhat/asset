@@ -1,8 +1,8 @@
-import { useGetInvestmentTypeOptionsQuery, useGetInvestmentRecommendationsMutation } from '../services/investment-amount.api';
+import { useGetInvestmentTypeOptionsQuery, useCreateInvestmentSessionMutation } from '../services/investment-amount.api';
 import {
   AllocationMasterItem,
-  InvestmentAmountRequest,
-  InvestmentRecommendationsData,
+  CreateSessionRequest,
+  CreateSessionResponse,
   InvestmentTypeOption,
 } from '../type/investment-amount.type';
 
@@ -31,12 +31,12 @@ export const useInvestmentAmount = () => {
     isLoading: isLoadingTypeOptions,
     isError: isTypeOptionsError,
   } = useGetInvestmentTypeOptionsQuery();
-  const [getInvestmentRecommendations, { isLoading, error }] = useGetInvestmentRecommendationsMutation();
+  const [createSession, { isLoading, error }] = useCreateInvestmentSessionMutation();
 
   const investmentTypeOptions = investmentTypeOptionsResponse?.data?.map(toOption) ?? [];
 
-  const submitInvestmentAmount = async (request: InvestmentAmountRequest): Promise<InvestmentRecommendationsData | null> => {
-    const response = await getInvestmentRecommendations(request).unwrap();
+  const submitInvestmentAmount = async (request: CreateSessionRequest): Promise<CreateSessionResponse | null> => {
+    const response = await createSession(request).unwrap();
     return response.data ?? null;
   };
 
@@ -46,6 +46,6 @@ export const useInvestmentAmount = () => {
     isTypeOptionsError,
     submitInvestmentAmount,
     isLoading,
-    error: error ? 'Không thể lấy đề xuất đầu tư.' : null,
+    error: error ? 'Không thể tạo phiên đầu tư. Vui lòng thử lại.' : null,
   };
 };
