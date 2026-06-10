@@ -14,6 +14,7 @@ public class SelectAssetResponse {
     private Long selectionId;
     private Long allocationId;
     private String assetCode;
+    private String assetType;         // Asset type/category code (e.g., GOLD, STOCK)
     private String assetName;
     @JsonFormat(shape = JsonFormat.Shape.NUMBER_FLOAT)
     private BigDecimal quantity;

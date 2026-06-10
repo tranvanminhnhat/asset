@@ -1,6 +1,7 @@
 package com.minhnhat.demo.features.investment.controller;
 
 import com.minhnhat.demo.common.base.response.ApiResponse;
+import com.minhnhat.demo.features.investment.dto.request.FinalizeSessionRequest;
 import com.minhnhat.demo.features.investment.dto.response.FinalizeSessionResponse;
 import com.minhnhat.demo.features.investment.service.FinalizeInvestmentSessionService;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,10 @@ public class FinalizeInvestmentSessionController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<FinalizeSessionResponse>> finalizeSession(
-            @PathVariable Long sessionId) {
+            @PathVariable Long sessionId,
+            @RequestBody FinalizeSessionRequest request) {
         try {
-            ApiResponse<FinalizeSessionResponse> response = service.execute(sessionId);
+            ApiResponse<FinalizeSessionResponse> response = service.execute(sessionId, request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error finalizing session", e);

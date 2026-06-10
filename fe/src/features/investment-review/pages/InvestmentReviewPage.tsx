@@ -5,9 +5,10 @@ import { formatCurrency, formatDateTime } from '@/lib/formatters';
 import LogoutButton from '@/features/logout/components/LogoutButton';
 import { useInvestmentReview } from '../hooks/useInvestmentReview';
 import { AllocationDetailReview } from '../type/investment-review.type';
-import { useFinalizeSessionMutation } from '@/features/investment-complete/services/finalize-session.api';
+import { useFinalizeSessionMutation, FinalizeAllocationItem } from '@/features/investment-complete/services/finalize-session.api';
 
 const FINALIZE_STORAGE_KEY = 'investmentFinalizeResult';
+const SESSION_DETAIL_STORAGE_KEY = 'investmentSessionDetail';
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   NOT_STARTED: { label: 'Chưa xử lý', color: 'text-slate-600', bg: 'bg-slate-100' },
@@ -23,9 +24,11 @@ const typeNames: Record<string, string> = {
   STOCK: 'Cổ Phiếu',
 };
 
-const AllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ allocation }) => {
+// Non-emergency allocation row: shows invested + residual (residual goes to emergency fund)
+const AssetAllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ allocation }) => {
   const sts = statusConfig[allocation.status] ?? statusConfig.NOT_STARTED;
   const percentDisplay = Number(allocation.percentage).toFixed(1);
+  const residual = Number(allocation.residualAmount ?? 0);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
@@ -50,9 +53,9 @@ const AllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ alloc
           <p className="text-xs text-slate-500 mb-0.5">Đã đầu tư</p>
           <p className="text-sm font-semibold text-emerald-700">{formatCurrency(allocation.investedAmount)}</p>
         </div>
-        <div className="bg-rose-50 rounded-lg p-3">
-          <p className="text-xs text-slate-500 mb-0.5">Dư lại</p>
-          <p className="text-sm font-semibold text-rose-600">{formatCurrency(allocation.residualAmount)}</p>
+        <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+          <p className="text-xs text-amber-700 mb-0.5 font-medium">Dư → Quỹ KCấp</p>
+          <p className="text-sm font-semibold text-amber-700">{formatCurrency(residual)}</p>
         </div>
       </div>
 
@@ -75,6 +78,72 @@ const AllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ alloc
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Emergency fund card: shows own amount + all residuals from other assets
+interface EmergencyCardProps {
+  allocation: AllocationDetailReview;
+  otherResiduals: { assetType: string; residual: number }[];
+}
+
+const EmergencyFundCard: React.FC<EmergencyCardProps> = ({ allocation, otherResiduals }) => {
+  const percentDisplay = Number(allocation.percentage).toFixed(1);
+  const emergencyBase = Number(allocation.recommendedAmount ?? 0);
+  const totalResidualFromOthers = otherResiduals.reduce((s, r) => s + r.residual, 0);
+  const totalEmergency = emergencyBase + totalResidualFromOthers;
+
+  return (
+    <div className="bg-amber-50 rounded-xl border-2 border-amber-200 shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-amber-900">Quỹ Khẩn Cấp</h4>
+            <span className="text-xs text-amber-600">({percentDisplay}% ban đầu)</span>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-amber-600 mb-0.5">Tổng quỹ khẩn cấp</p>
+          <p className="text-lg font-bold text-amber-800">{formatCurrency(totalEmergency)}</p>
+        </div>
+      </div>
+
+      {/* Breakdown */}
+      <div className="space-y-2">
+        {/* Base emergency amount */}
+        <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-amber-100">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+            <span className="text-xs text-slate-600">Quỹ khẩn cấp ban đầu</span>
+          </div>
+          <span className="text-xs font-semibold text-slate-900">{formatCurrency(emergencyBase)}</span>
+        </div>
+
+        {/* Residuals from other assets */}
+        {otherResiduals.filter((r) => r.residual > 0).map((r) => (
+          <div key={r.assetType} className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-amber-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-300 flex-shrink-0" />
+              <span className="text-xs text-slate-600">
+                Phần dư từ {typeNames[r.assetType] ?? r.assetType}
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-rose-600">+ {formatCurrency(r.residual)}</span>
+          </div>
+        ))}
+
+        {/* Total line */}
+        <div className="flex items-center justify-between bg-amber-100 rounded-lg px-3 py-2.5 border border-amber-200 mt-1">
+          <span className="text-xs font-bold text-amber-900">Tổng cộng</span>
+          <span className="text-sm font-bold text-amber-900">{formatCurrency(totalEmergency)}</span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -122,16 +191,39 @@ const InvestmentReviewPage: React.FC = () => {
   }
 
   const allocations = sessionDetail.allocations ?? [];
-  const totalInvested = allocations.reduce((sum, a) => sum + Number(a.investedAmount ?? 0), 0);
-  const totalResidual = allocations.reduce((sum, a) => sum + Number(a.residualAmount ?? 0), 0);
+
+  const emergencyAllocation = allocations.find((a) => a.assetType === 'EMERGENCY') ?? null;
+  const nonEmergencyAllocations = allocations.filter((a) => a.assetType !== 'EMERGENCY');
+
+  const otherResiduals = nonEmergencyAllocations.map((a) => ({
+    assetType: a.assetType,
+    residual: Number(a.residualAmount ?? 0),
+  }));
+
+  const totalInvested = nonEmergencyAllocations.reduce((sum, a) => sum + Number(a.investedAmount ?? 0), 0);
+  const totalResidualFromOthers = otherResiduals.reduce((s, r) => s + r.residual, 0);
+  const emergencyTotal = Number(emergencyAllocation?.recommendedAmount ?? 0) + totalResidualFromOthers;
 
   const handleFinalize = async () => {
     if (!sessionId) return;
     setFinalizeError(null);
     try {
-      const res = await finalizeSession(sessionId).unwrap();
+      // Build simplified allocation list: assetType + finalAmount
+      // EMERGENCY receives its base + all residuals from other assets
+      const allocationItems: FinalizeAllocationItem[] = [
+        ...nonEmergencyAllocations.map((a) => ({
+          assetType: a.assetType,
+          finalAmount: Number(a.investedAmount ?? 0),
+        })),
+        ...(emergencyAllocation
+          ? [{ assetType: 'EMERGENCY', finalAmount: emergencyTotal }]
+          : []),
+      ];
+
+      const res = await finalizeSession({ sessionId, body: { allocations: allocationItems } }).unwrap();
       if (res.data) {
         localStorage.setItem(FINALIZE_STORAGE_KEY, JSON.stringify(res.data));
+        localStorage.setItem(SESSION_DETAIL_STORAGE_KEY, JSON.stringify(sessionDetail));
       }
       router.push('/investment-complete');
     } catch {
@@ -171,12 +263,11 @@ const InvestmentReviewPage: React.FC = () => {
         </div>
 
         {/* Summary stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Tổng số tiền', value: formatCurrency(sessionDetail.totalAmount), cls: 'text-slate-900' },
-            { label: 'Tổng đã đầu tư', value: formatCurrency(totalInvested), cls: 'text-emerald-700' },
-            { label: 'Tổng dư lại', value: formatCurrency(totalResidual), cls: 'text-rose-600' },
-            { label: 'Tiền dự kiến hoàn về', value: formatCurrency(totalResidual), cls: 'text-amber-600' },
+            { label: 'Tổng đã đầu tư (trừ khẩn cấp)', value: formatCurrency(totalInvested), cls: 'text-emerald-700' },
+            { label: 'Tổng Quỹ Khẩn Cấp', value: formatCurrency(emergencyTotal), cls: 'text-amber-700' },
           ].map(({ label, value, cls }) => (
             <div key={label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
               <p className="text-xs text-slate-500 mb-1">{label}</p>
@@ -205,9 +296,18 @@ const InvestmentReviewPage: React.FC = () => {
         <div className="mb-6">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Chi tiết phân bổ</h2>
           <div className="space-y-4">
-            {allocations.map((allocation) => (
-              <AllocationRow key={allocation.allocationId} allocation={allocation} />
+            {/* Non-emergency assets first */}
+            {nonEmergencyAllocations.map((allocation) => (
+              <AssetAllocationRow key={allocation.allocationId} allocation={allocation} />
             ))}
+
+            {/* Emergency fund card — aggregates all residuals */}
+            {emergencyAllocation && (
+              <EmergencyFundCard
+                allocation={emergencyAllocation}
+                otherResiduals={otherResiduals}
+              />
+            )}
           </div>
         </div>
 

@@ -1,5 +1,25 @@
 // Investment Processing Types
 
+// Matches BE: investment.dto.response.ProductWithPriceResponse
+export interface ProductWithPrice {
+  productId: number;
+  assetCode: string;
+  assetType: string;
+  assetName: string;
+  platformName: string;
+  buyPrice: number;
+  sellPrice: number;
+}
+
+export interface ProductsApiResponse {
+  data: ProductWithPrice[];
+  message?: {
+    code: string;
+    message: string;
+    service: string;
+  };
+}
+
 // Matches BE: investment.dto.response.AssetPriceResponse
 export interface AssetPrice {
   // Legacy fields (may be null for newer assets)
@@ -26,6 +46,8 @@ export interface AssetsApiResponse {
 }
 
 export interface SelectAssetRequest {
+  productId: number;
+  assetType: string;
   assetCode: string;
   quantity: number;
 }

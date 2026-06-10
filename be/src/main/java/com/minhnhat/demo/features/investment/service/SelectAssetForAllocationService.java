@@ -77,29 +77,62 @@ public class SelectAssetForAllocationService {
     }
 
     private void loadData(Context ctx) {
-        log.debug("Loading asset data: assetCode={}", ctx.request.getAssetCode());
+        log.debug("Loading asset data: productId={}, assetType={}",
+                ctx.request.getProductId(), ctx.request.getAssetType());
 
-        // Step 1: Find product by asset code
-        AssetProductEntity product = assetProductRepository.findByCode(ctx.request.getAssetCode())
+        // Step 1: Validate assetType matches allocation's assetType
+        String allocationAssetType = ctx.allocation.getAssetType();
+        String requestAssetType = ctx.request.getAssetType();
+
+        if (!allocationAssetType.equals(requestAssetType)) {
+            log.error("Asset type mismatch: allocation expects {}, request provides {}",
+                    allocationAssetType, requestAssetType);
+            throw new IllegalArgumentException("Asset type does not match allocation type");
+        }
+
+        // Step 2: Determine productId (use from request or find by assetCode)
+        Long productId = ctx.request.getProductId();
+
+        if (productId == null) {
+            // Fallback to assetCode if productId not provided (backward compatibility)
+            if (ctx.request.getAssetCode() != null) {
+                AssetProductEntity product = assetProductRepository.findByCode(ctx.request.getAssetCode())
+                        .orElseThrow(() -> {
+                            log.error("Product not found for assetCode={}", ctx.request.getAssetCode());
+                            return new IllegalArgumentException("Asset not found");
+                        });
+                productId = product.getId();
+                ctx.assetCode = product.getCode();
+                ctx.assetName = product.getName();
+                log.debug("Product found by assetCode: id={}, code={}, name={}",
+                        product.getId(), product.getCode(), product.getName());
+            } else {
+                throw new IllegalArgumentException("Either productId or assetCode must be provided");
+            }
+        } else {
+            // Find product by productId
+            final Long finalProductId = productId;
+            AssetProductEntity product = assetProductRepository.findByIdAndIsActiveTrue(finalProductId)
+                    .orElseThrow(() -> {
+                        log.error("Product not found for productId={}", finalProductId);
+                        return new IllegalArgumentException("Asset not found");
+                    });
+            ctx.assetCode = product.getCode();
+            ctx.assetName = product.getName();
+            log.debug("Product found by productId: id={}, code={}, name={}",
+                    product.getId(), product.getCode(), product.getName());
+        }
+
+        // Step 3: Find latest price for this product
+        final Long finalProductId = productId;
+        ctx.asset = assetPriceRepository.findByProductIdAndIsLatestTrue(finalProductId)
                 .orElseThrow(() -> {
-                    log.error("Product not found for assetCode={}", ctx.request.getAssetCode());
-                    return new IllegalArgumentException("Asset not found");
-                });
-
-        log.debug("Product found: id={}, code={}, name={}", product.getId(), product.getCode(), product.getName());
-
-        // Step 2: Find latest price for this product
-        ctx.asset = assetPriceRepository.findByProductIdAndIsLatestTrue(product.getId())
-                .orElseThrow(() -> {
-                    log.error("Price not found for productId={}", product.getId());
+                    log.error("Price not found for productId={}", finalProductId);
                     return new IllegalArgumentException("Asset price not found");
                 });
 
-        // Store product name for response
-        ctx.assetName = product.getName();
-
-        log.debug("Asset loaded: productId={}, assetCode={}, buyPrice={}",
-                product.getId(), ctx.request.getAssetCode(), ctx.asset.getBuyPrice());
+        log.debug("Asset loaded: productId={}, assetCode={}, assetType={}, buyPrice={}",
+                finalProductId, ctx.assetCode, requestAssetType, ctx.asset.getBuyPrice());
 
         // Validate total invested amount
         BigDecimal investedAmount = ctx.request.getQuantity().multiply(ctx.asset.getBuyPrice());
@@ -123,15 +156,18 @@ public class SelectAssetForAllocationService {
         InvestmentAssetSelectionEntity selection = InvestmentAssetSelectionEntity.builder()
                 .sessionId(ctx.sessionId)
                 .allocationId(ctx.allocationId)
-                .assetCode(ctx.request.getAssetCode())
+                .assetCode(ctx.assetCode)
                 .assetName(ctx.assetName)  // Use product name from DB
+                .categoryCode(ctx.request.getAssetType())  // Store asset type as categoryCode
                 .quantity(ctx.request.getQuantity())
                 .buyPrice(ctx.asset.getBuyPrice())
                 .investedAmount(investedAmount)
+                .productId(ctx.request.getProductId())  // Store productId reference
                 .build();
         ctx.selection = selectionRepository.save(selection);
-        log.debug("Asset selection created: selectionId={}, assetCode={}, assetName={}, quantity={}, investedAmount={}",
-                ctx.selection.getId(), ctx.selection.getAssetCode(), ctx.assetName, ctx.selection.getQuantity(), investedAmount);
+        log.debug("Asset selection created: selectionId={}, assetCode={}, assetName={}, assetType={}, quantity={}, investedAmount={}",
+                ctx.selection.getId(), ctx.selection.getAssetCode(), ctx.assetName, ctx.request.getAssetType(),
+                ctx.selection.getQuantity(), investedAmount);
 
         // Update allocation status and amounts
         ctx.allocation.setStatus(InvestmentWorkflowConstant.ALLOCATION_IN_PROGRESS);
@@ -146,7 +182,7 @@ public class SelectAssetForAllocationService {
         InvestmentSessionEventEntity event = InvestmentSessionEventEntity.builder()
                 .sessionId(ctx.sessionId)
                 .eventType(InvestmentWorkflowConstant.EVENT_ASSET_SELECTED)
-                .payload("{\"allocationId\": " + ctx.allocationId + ", \"assetCode\": \"" + ctx.request.getAssetCode() + "\"}")
+                .payload("{\"allocationId\": " + ctx.allocationId + ", \"assetCode\": \"" + ctx.assetCode + "\"}")
                 .build();
         eventRepository.save(event);
         log.debug("Event created: eventType={}", InvestmentWorkflowConstant.EVENT_ASSET_SELECTED);
@@ -159,6 +195,7 @@ public class SelectAssetForAllocationService {
                 .selectionId(ctx.selection.getId())
                 .allocationId(ctx.allocationId)
                 .assetCode(ctx.selection.getAssetCode())
+                .assetType(ctx.selection.getCategoryCode())  // Use categoryCode as assetType
                 .assetName(ctx.selection.getAssetName())
                 .quantity(ctx.selection.getQuantity())
                 .buyPrice(ctx.selection.getBuyPrice())
@@ -167,7 +204,9 @@ public class SelectAssetForAllocationService {
                 .createdAt(ctx.selection.getCreatedAt())
                 .build();
 
-        log.debug("Response created successfully");
+        log.debug("Response created successfully: assetCode={}, assetType={}, assetName={}",
+                response.getAssetCode(), response.getAssetType(), response.getAssetName());
+
         return ApiResponse.<SelectAssetResponse>builder()
                 .data(response)
                 .message(InvestmentWorkflowConstant.SELECT_ASSET_INFO,
@@ -187,7 +226,8 @@ public class SelectAssetForAllocationService {
         InvestmentSessionEntity session;
         InvestmentSessionAllocationEntity allocation;
         AssetPriceEntity asset;
-        String assetName;  // Asset name from product
+        String assetCode;      // Asset/product code from DB
+        String assetName;      // Asset name from product entity
         InvestmentAssetSelectionEntity selection;
     }
 }

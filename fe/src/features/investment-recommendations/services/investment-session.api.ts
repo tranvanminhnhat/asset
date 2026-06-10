@@ -8,6 +8,7 @@ export const investmentSessionApi = baseApi.injectEndpoints({
         url: `/api/v1/investment/${sessionId}/detail`,
         method: 'GET',
       }),
+      providesTags: (_result, _error, sessionId) => [{ type: 'SessionDetail', id: sessionId }],
     }),
     reviewSession: builder.mutation<ReviewSessionApiResponse, number>({
       query: (sessionId) => ({

@@ -1,0 +1,60 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "npm build",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "npm build cmd",
+			"type": "shell",
+			"command": "cmd /c npm run build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "fix duplicate",
+			"type": "shell",
+			"command": "cmd /c node -e \"const fs=require('fs');const content=fs.readFileSync('src/features/investment-complete/pages/InvestmentCompletePage.tsx','utf8');const marker='\\nexport default InvestmentCompletePage;';const first=content.indexOf(marker);const clean=content.slice(0,first+marker.length)+'\\n';fs.writeFileSync('src/features/investment-complete/pages/InvestmentCompletePage.tsx',clean,'utf8');console.log('done',clean.length);\"",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "run fix script",
+			"type": "shell",
+			"command": "cmd /c node fix-duplicate.mjs",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "rewrite page",
+			"type": "shell",
+			"command": "cmd /c node fix-duplicate.mjs",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "npm build final",
+			"type": "shell",
+			"command": "cmd /c npm run build",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "cleanup",
+			"type": "shell",
+			"command": "cmd /c del fix-duplicate.mjs",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}
