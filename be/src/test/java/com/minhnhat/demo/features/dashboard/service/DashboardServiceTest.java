@@ -3,7 +3,7 @@ package com.minhnhat.demo.features.dashboard.service;
 import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
-import com.minhnhat.demo.common.db.repository.InvestmentPlanAllocationRepository;
+import com.minhnhat.demo.common.db.repository.PortfolioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 public class DashboardServiceTest {
 
     @Mock
-    private InvestmentPlanAllocationRepository allocationRepository;
+    private PortfolioRepository portfolioRepository;
 
     @Mock
     private SecurityUtils securityUtils;
@@ -54,7 +54,7 @@ public class DashboardServiceTest {
      */
     @Test
     public void testGetDashboard_EmptyData_ReturnsEmptyDashboard() {
-        when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(new ArrayList<>());
 
         DashboardResponse response = dashboardService.execute();
@@ -75,11 +75,11 @@ public class DashboardServiceTest {
         Map<String, Object> row = new HashMap<>();
         row.put("assetType", "STOCK");
         row.put("totalQuantity", new BigDecimal("100"));           // 100 units
-        row.put("totalAmount", new BigDecimal("10000.00"));        // invested 10,000
+        row.put("totalInvested", new BigDecimal("10000.00"));      // invested 10,000
         row.put("currentPrice", new BigDecimal("120.00"));         // current price 120 per unit
         mockData.add(row);
 
-        when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -119,7 +119,7 @@ public class DashboardServiceTest {
         Map<String, Object> stock = new HashMap<>();
         stock.put("assetType", "STOCK");
         stock.put("totalQuantity", new BigDecimal("100"));
-        stock.put("totalAmount", new BigDecimal("10000.00"));
+        stock.put("totalInvested", new BigDecimal("10000.00"));
         stock.put("currentPrice", new BigDecimal("120.00"));
         mockData.add(stock);
 
@@ -127,11 +127,11 @@ public class DashboardServiceTest {
         Map<String, Object> gold = new HashMap<>();
         gold.put("assetType", "GOLD");
         gold.put("totalQuantity", new BigDecimal("50"));
-        gold.put("totalAmount", new BigDecimal("90000.00"));
+        gold.put("totalInvested", new BigDecimal("90000.00"));
         gold.put("currentPrice", new BigDecimal("2000.00"));
         mockData.add(gold);
 
-        when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -160,11 +160,11 @@ public class DashboardServiceTest {
         Map<String, Object> row = new HashMap<>();
         row.put("assetType", "ETF");
         row.put("totalQuantity", new BigDecimal("50"));
-        row.put("totalAmount", new BigDecimal("5000.00"));
+        row.put("totalInvested", new BigDecimal("5000.00"));
         row.put("currentPrice", null);  // No price data
         mockData.add(row);
 
-        when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -183,11 +183,11 @@ public class DashboardServiceTest {
         Map<String, Object> row = new HashMap<>();
         row.put("assetType", "EMERGENCY");
         row.put("totalQuantity", BigDecimal.ZERO);
-        row.put("totalAmount", BigDecimal.ZERO);  // Zero invested
+        row.put("totalInvested", BigDecimal.ZERO);  // Zero invested
         row.put("currentPrice", new BigDecimal("1.00"));
         mockData.add(row);
 
-        when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -206,11 +206,11 @@ public class DashboardServiceTest {
         Map<String, Object> row = new HashMap<>();
         row.put("assetType", "STOCK");
         row.put("totalQuantity", new BigDecimal("100"));
-        row.put("totalAmount", new BigDecimal("12000.00"));  // invested 12,000
+        row.put("totalInvested", new BigDecimal("12000.00"));  // invested 12,000
         row.put("currentPrice", new BigDecimal("100.00"));   // current price 100 (loss)
         mockData.add(row);
 
-        when(allocationRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();

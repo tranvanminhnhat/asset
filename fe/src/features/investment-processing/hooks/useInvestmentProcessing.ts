@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import {
-  useGetAvailableAssetsQuery,
+  useGetProductsByAssetTypeQuery,
   useSelectAssetForAllocationMutation,
   useCompleteAllocationMutation,
 } from '../services/investment-processing.api';
-import { CompleteAllocationResponse, SelectAssetRequest, SelectAssetResponse } from '../type/investment-processing.type';
+import { AssetPrice, CompleteAllocationResponse, SelectAssetRequest, SelectAssetResponse } from '../type/investment-processing.type';
 
 interface UseInvestmentProcessingParams {
   sessionId: number;
@@ -14,10 +14,10 @@ interface UseInvestmentProcessingParams {
 
 export const useInvestmentProcessing = ({ sessionId, allocationId, assetType }: UseInvestmentProcessingParams) => {
   const {
-    data: assetsResponse,
+    data: productsResponse,
     isLoading: isLoadingAssets,
     isError: isAssetsError,
-  } = useGetAvailableAssetsQuery(assetType);
+  } = useGetProductsByAssetTypeQuery(assetType);
 
   const [selectAsset, { isLoading: isSelecting, isError: isSelectError, error: selectError }] =
     useSelectAssetForAllocationMutation();
@@ -26,7 +26,18 @@ export const useInvestmentProcessing = ({ sessionId, allocationId, assetType }: 
 
   const [selectResult, setSelectResult] = useState<SelectAssetResponse | null>(null);
 
-  const assets = assetsResponse?.data?.filter((a) => a.isActive) ?? [];
+  const assets: AssetPrice[] = (productsResponse?.data ?? []).map((p) => ({
+    id: p.productId,
+    productId: p.productId,
+    assetCode: p.assetCode,
+    assetType: p.assetType,
+    assetName: p.assetName,
+    buyPrice: p.buyPrice,
+    sellPrice: p.sellPrice,
+    priceDate: null,
+    isLatest: true,
+    isActive: true,
+  }));
 
   const submitSelect = async (request: SelectAssetRequest): Promise<SelectAssetResponse | null> => {
     const response = await selectAsset({ sessionId, allocationId, body: request }).unwrap();

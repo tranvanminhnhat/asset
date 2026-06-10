@@ -5,27 +5,38 @@ import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
 import LogoutButton from '@/features/logout/components/LogoutButton';
 import { FinalizeSessionResponse } from '../services/finalize-session.api';
+import { SessionDetailReview } from '@/features/investment-review/type/investment-review.type';
 
 const STORAGE_KEY = 'investmentFinalizeResult';
+const SESSION_DETAIL_KEY = 'investmentSessionDetail';
+
+const typeNames: Record<string, string> = {
+  EMERGENCY: 'Quỹ Khẩn cấp',
+  GOLD: 'Quỹ Vàng',
+  ETF: 'Quỹ ETF',
+  STOCK: 'Cổ Phiếu',
+};
 
 const InvestmentCompletePage: React.FC = () => {
   const router = useRouter();
   const [data, setData] = useState<FinalizeSessionResponse | null>(null);
+  const [sessionDetail, setSessionDetail] = useState<SessionDetailReview | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      try {
-        setData(JSON.parse(raw) as FinalizeSessionResponse);
-      } catch {
-        // ignore
-      }
+      try { setData(JSON.parse(raw) as FinalizeSessionResponse); } catch { /* ignore */ }
+    }
+    const rawDetail = localStorage.getItem(SESSION_DETAIL_KEY);
+    if (rawDetail) {
+      try { setSessionDetail(JSON.parse(rawDetail) as SessionDetailReview); } catch { /* ignore */ }
     }
   }, []);
 
   const handleGoToDashboard = () => {
     localStorage.removeItem('investmentSessionId');
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SESSION_DETAIL_KEY);
     router.push('/dashboard');
   };
 
@@ -51,87 +62,70 @@ const InvestmentCompletePage: React.FC = () => {
     );
   }
 
+  const allocations = sessionDetail?.allocations ?? [];
+  const emergencyAllocation = allocations.find((a) => a.assetType === 'EMERGENCY');
+  const nonEmergencyAllocations = allocations.filter((a) => a.assetType !== 'EMERGENCY');
+  const totalResidualFromOthers = nonEmergencyAllocations.reduce((s, a) => s + Number(a.residualAmount ?? 0), 0);
+  const emergencyTotal = Number(emergencyAllocation?.recommendedAmount ?? 0) + totalResidualFromOthers;
+
+  const summaryItems = [
+    ...nonEmergencyAllocations.map((a) => ({
+      label: typeNames[a.assetType] ?? a.assetType,
+      amount: Number(a.investedAmount ?? 0),
+    })),
+    ...(emergencyAllocation ? [{ label: typeNames['EMERGENCY'], amount: emergencyTotal }] : []),
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10 animate-fade-up">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Đầu tư hoàn thành!</h1>
-            </div>
-            <p className="text-sm text-slate-500">Phiên đầu tư của bạn đã được hoàn tất thành công</p>
-          </div>
-          <LogoutButton />
-        </div>
-
-        {/* Steps */}
-        <div className="flex items-center gap-2 mb-8">
-          {['Số tiền & Chiến lược', 'Xử lý danh mục', 'Xem lại', 'Hoàn thành'].map((step, i) => (
-            <React.Fragment key={step}>
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-700">
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-emerald-600 text-white">{i + 1}</span>
-                <span className="hidden sm:inline">{step}</span>
-              </div>
-              {i < 3 && <div className="flex-1 h-px bg-emerald-200" />}
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* Success banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 p-6 mb-6 text-white shadow-lg shadow-emerald-500/25">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white/80 mb-0.5">Phiên #{data.sessionId} — {data.status}</p>
-              <p className="text-2xl font-bold">{formatCurrency(data.totalInvested)}</p>
-              <p className="text-sm text-white/70">đã được đầu tư thành công</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: 'Đã đầu tư', value: formatCurrency(data.totalInvested), cls: 'text-emerald-700' },
-            { label: 'Tiền dư hoàn về', value: formatCurrency(data.totalResidual), cls: 'text-rose-600' },
-            { label: 'Số dư tiền mặt', value: formatCurrency(data.updatedCashBalance), cls: 'text-slate-900' },
-            { label: 'Hoàn thành lúc', value: formatDateTime(data.completedAt), cls: 'text-slate-700' },
-          ].map(({ label, value, cls }) => (
-            <div key={label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <p className="text-xs text-slate-500 mb-1">{label}</p>
-              <p className={`text-sm font-bold ${cls}`}>{value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => router.push('/investment-review')}
-            className="px-5 py-2.5 border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition"
-          >
-            Xem lại chi tiết
-          </button>
-          <button
-            onClick={handleGoToDashboard}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition"
-          >
-            Về Dashboard
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
+      <div className="max-w-md w-full">
+        {/* Success icon */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-9 h-9 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-          </button>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Đầu tư hoàn thành!</h1>
+          <p className="text-sm text-slate-500 mt-1">Phiên #{data.sessionId} · {formatDateTime(data.completedAt)}</p>
         </div>
+
+        {/* Summary card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4">
+          <div className="bg-emerald-600 px-5 py-4">
+            <p className="text-xs text-white/70 mb-0.5">Tổng số tiền đã đầu tư</p>
+            <p className="text-3xl font-bold text-white">{formatCurrency(data.totalInvested)}</p>
+          </div>
+
+          {summaryItems.length > 0 && (
+            <div className="divide-y divide-slate-100">
+              {summaryItems.map(({ label, amount }) => (
+                <div key={label} className="flex items-center justify-between px-5 py-3.5">
+                  <span className="text-sm text-slate-600">{label}</span>
+                  <span className="text-sm font-semibold text-slate-900">{formatCurrency(amount)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {data.totalResidual > 0 && (
+            <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-t border-slate-100">
+              <span className="text-xs text-slate-500">Tiền dư hoàn về</span>
+              <span className="text-xs font-semibold text-rose-600">− {formatCurrency(data.totalResidual)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Go to dashboard */}
+        <button
+          onClick={handleGoToDashboard}
+          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition"
+        >
+          Về Dashboard
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+        </button>
       </div>
     </div>
   );

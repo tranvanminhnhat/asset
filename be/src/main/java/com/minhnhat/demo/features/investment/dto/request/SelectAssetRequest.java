@@ -9,7 +9,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SelectAssetRequest {
-    private String assetCode;
-    private BigDecimal quantity;
+    private Long productId;           // Product ID from FE selection
+    private String assetType;         // Asset type/category code (e.g., GOLD, STOCK)
+    private String assetCode;         // Legacy support: product code
+    private BigDecimal quantity;      // Quantity to invest
 }
 

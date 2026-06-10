@@ -14,28 +14,6 @@ const typeNames: Record<string, string> = {
   STOCK: 'Cổ Phiếu',
 };
 
-// Mock price data for types that may not have real price data yet
-const MOCK_ASSETS: Record<string, { assetCode: string; assetName: string; buyPrice: number; sellPrice: number }[]> = {
-  GOLD: [
-    { assetCode: 'GOLD_SJC', assetName: 'Vàng SJC 1 chỉ', buyPrice: 8820000, sellPrice: 8920000 },
-    { assetCode: 'GOLD_999', assetName: 'Vàng 9999 1 chỉ', buyPrice: 8750000, sellPrice: 8850000 },
-    { assetCode: 'GOLD_PNJ', assetName: 'Vàng PNJ 1 chỉ', buyPrice: 8780000, sellPrice: 8870000 },
-  ],
-  ETF: [
-    { assetCode: 'E1VFVN30', assetName: 'VFMVN30 ETF', buyPrice: 14200, sellPrice: 14300 },
-    { assetCode: 'FUEVFVND', assetName: 'VFMVN Diamond ETF', buyPrice: 18500, sellPrice: 18600 },
-    { assetCode: 'FUESSV50', assetName: 'SSI-SCA VN50 ETF', buyPrice: 13800, sellPrice: 13900 },
-    { assetCode: 'FUEIP100', assetName: 'SSIAM VNFIN LEAD ETF', buyPrice: 16400, sellPrice: 16500 },
-  ],
-  STOCK: [
-    { assetCode: 'VCB', assetName: 'Vietcombank', buyPrice: 88000, sellPrice: 88500 },
-    { assetCode: 'VIC', assetName: 'Vingroup', buyPrice: 45200, sellPrice: 45500 },
-    { assetCode: 'HPG', assetName: 'Hòa Phát Group', buyPrice: 28500, sellPrice: 28700 },
-    { assetCode: 'MWG', assetName: 'Mobile World', buyPrice: 52000, sellPrice: 52300 },
-    { assetCode: 'FPT', assetName: 'FPT Corporation', buyPrice: 115000, sellPrice: 115500 },
-  ],
-};
-
 interface InvestmentProcessingPageProps {
   sessionId: number;
   allocationId: number;
@@ -56,7 +34,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
   const [step, setStep] = useState<'select' | 'confirm' | 'done'>('select');
 
   const {
-    assets: apiAssets,
+    assets,
     isLoadingAssets,
     isAssetsError,
     selectResult,
@@ -67,22 +45,6 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
     submitSelect,
     submitComplete,
   } = useInvestmentProcessing({ sessionId, allocationId, assetType });
-
-  // Use real assets if available, otherwise mock
-  const assets: AssetPrice[] = apiAssets.length > 0
-    ? apiAssets
-    : (MOCK_ASSETS[assetType] ?? []).map((m) => ({
-        id: 0,
-        productId: 0,
-        assetCode: m.assetCode,
-        assetName: m.assetName,
-        assetType,
-        buyPrice: m.buyPrice,
-        sellPrice: m.sellPrice,
-        priceDate: null,
-        isLatest: true,
-        isActive: true,
-      }));
 
   const parsedQuantity = Number(quantity.replace(/[^\d.]/g, ''));
   const totalCost = selectedAsset ? selectedAsset.buyPrice * parsedQuantity : 0;
@@ -95,6 +57,8 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
 
     try {
       await submitSelect({
+        productId: selectedAsset.productId,
+        assetType: selectedAsset.assetType ?? assetType,
         assetCode: selectedAsset.assetCode ?? `PRODUCT_${selectedAsset.productId}`,
         quantity: parsedQuantity,
       });
@@ -219,9 +183,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
             <div>
               <h2 className="text-base font-semibold text-slate-900 mb-1">Chọn tài sản</h2>
               <p className="text-xs text-slate-500 mb-4">
-                {isAssetsError || apiAssets.length === 0
-                  ? 'Hiển thị dữ liệu mẫu (chưa có giá thực)'
-                  : `${assets.length} tài sản đang hoạt động`}
+                {`${assets.length} tài sản đang hoạt động`}
               </p>
 
               {assets.length === 0 ? (
