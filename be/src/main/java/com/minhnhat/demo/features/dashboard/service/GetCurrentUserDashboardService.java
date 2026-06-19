@@ -1,9 +1,11 @@
 package com.minhnhat.demo.features.dashboard.service;
 
 import com.minhnhat.demo.common.db.entity.AssetPriceEntity;
+import com.minhnhat.demo.common.db.entity.InvestmentAssetSelectionEntity;
 import com.minhnhat.demo.common.db.entity.PortfolioEntity;
 import com.minhnhat.demo.common.db.repository.AssetPriceRepository;
 import com.minhnhat.demo.common.db.repository.AssetProductRepository;
+import com.minhnhat.demo.common.db.repository.InvestmentAssetSelectionRepository;
 import com.minhnhat.demo.common.db.repository.PortfolioRepository;
 import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class GetCurrentUserDashboardService {
     private final PortfolioRepository portfolioRepository;
     private final AssetProductRepository assetProductRepository;
     private final AssetPriceRepository assetPriceRepository;
+    private final InvestmentAssetSelectionRepository selectionRepository;
     private final SecurityUtils securityUtils;
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
@@ -120,36 +124,101 @@ public class GetCurrentUserDashboardService {
     }
 
     /**
-     * Get the current price for an asset type
-     * Finds the latest price for any product in this asset category
-     * Uses the maximum buy price among all products in the category as the current price
+     * Get the current average price for an asset type
+     *
+     * Strategy:
+     * 1. Find all actual product selections (InvestmentAssetSelectionEntity) for this assetType
+     * 2. Get the latest prices for those specific products (from AssetPriceRepository)
+     * 3. Calculate weighted average price: sum(price × quantity) / sum(quantity)
+     * 4. This gives us a market-representative price based on actual holdings
+     *
+     * Special case: For EMERGENCY (cash), returns 1.0 (not used in calculation)
      */
     private BigDecimal getCurrentPriceForAssetType(String assetType) {
         try {
-            // Get all latest prices
+            // EMERGENCY is cash equivalent - no price lookup needed
+            if (InvestmentWorkflowConstant.ASSET_TYPE_EMERGENCY.equals(assetType)) {
+                return BigDecimal.ONE; // Won't multiply with quantity anyway
+            }
+
+            // Step 1: Get all product selections for this assetType
+            // These are the actual products the user invested in
+            List<InvestmentAssetSelectionEntity> selections = selectionRepository.findByAssetType(assetType);
+
+            if (selections == null || selections.isEmpty()) {
+                log.warn("No asset selections found for assetType: {}", assetType);
+                return BigDecimal.ONE;
+            }
+
+            // Step 2: Extract unique product IDs
+            Set<Long> productIds = new java.util.HashSet<>();
+            for (InvestmentAssetSelectionEntity selection : selections) {
+                if (selection.getProductId() != null) {
+                    productIds.add(selection.getProductId());
+                }
+            }
+
+            if (productIds.isEmpty()) {
+                log.warn("No productId found in asset selections for assetType: {}", assetType);
+                return BigDecimal.ONE;
+            }
+
+            // Step 3: Get latest prices for these specific products
             List<AssetPriceEntity> allLatestPrices = assetPriceRepository.findAllLatestPrices();
 
             if (allLatestPrices == null || allLatestPrices.isEmpty()) {
                 log.warn("No latest prices found in database");
-                return BigDecimal.ONE; // Default fallback price
+                return BigDecimal.ONE;
             }
 
-            // Group prices by product category and find the max price for this asset type
-            BigDecimal maxPrice = BigDecimal.ZERO;
+            // Build a map of productId -> latest price
+            Map<Long, BigDecimal> priceMap = new java.util.HashMap<>();
             for (AssetPriceEntity price : allLatestPrices) {
-                // Get the product to find its category
-                var product = assetProductRepository.findById(price.getProductId());
-                // Note: This is simplified - we'd need to join with category in production
-                // For now, we'll just return the first available price
-                if (product.isPresent()) {
-                    if (price.getBuyPrice() != null && price.getBuyPrice().compareTo(maxPrice) > 0) {
-                        maxPrice = price.getBuyPrice();
-                    }
+                if (productIds.contains(price.getProductId()) && price.getBuyPrice() != null) {
+                    priceMap.put(price.getProductId(), price.getBuyPrice());
                 }
             }
 
-            // Return max price found, or 1 as fallback
-            return maxPrice.compareTo(BigDecimal.ZERO) > 0 ? maxPrice : BigDecimal.ONE;
+            if (priceMap.isEmpty()) {
+                log.warn("No prices found for selected products of assetType: {}", assetType);
+                return BigDecimal.ONE;
+            }
+
+            // Step 4: Calculate weighted average price
+            // weightedAvg = sum(price × quantity) / sum(quantity)
+            BigDecimal totalWeightedPrice = BigDecimal.ZERO;
+            BigDecimal totalQuantity = BigDecimal.ZERO;
+
+            for (InvestmentAssetSelectionEntity selection : selections) {
+                Long productId = selection.getProductId();
+                if (productId != null && priceMap.containsKey(productId)) {
+                    BigDecimal price = priceMap.get(productId);
+                    BigDecimal quantity = selection.getQuantity();
+
+                    // Add weighted price: price × quantity
+                    totalWeightedPrice = totalWeightedPrice.add(
+                            price.multiply(quantity)
+                    );
+                    totalQuantity = totalQuantity.add(quantity);
+                }
+            }
+
+            if (totalQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+                log.warn("Total quantity is zero for assetType: {}", assetType);
+                return BigDecimal.ONE;
+            }
+
+            // Calculate final weighted average
+            BigDecimal weightedAvgPrice = totalWeightedPrice.divide(
+                    totalQuantity,
+                    SCALE_4,
+                    RoundingMode.HALF_UP
+            );
+
+            log.debug("Calculated weighted average price for assetType: {}, avgPrice: {}, productCount: {}, totalQuantity: {}",
+                    assetType, weightedAvgPrice, priceMap.size(), totalQuantity);
+
+            return weightedAvgPrice;
         } catch (Exception e) {
             log.warn("Error fetching current price for assetType: {}, using fallback price of 1", assetType, e);
             return BigDecimal.ONE;
