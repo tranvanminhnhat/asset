@@ -18,7 +18,7 @@ public class GetLatestAssetPriceService {
     @Transactional(readOnly = true)
     public Optional<BigDecimal> execute(Long productId) {
         return assetPriceRepository.findByProductIdAndIsLatestTrue(productId)
-                .map(AssetPriceEntity::getBuyPrice);
+                .map(AssetPriceEntity::getCurrentPrice);
     }
 }
 

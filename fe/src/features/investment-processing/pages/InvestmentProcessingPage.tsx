@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { formatCurrency } from '@/lib/formatters';
+import { formatCurrency, formatUnitPrice } from '@/lib/formatters';
 import LogoutButton from '@/features/logout/components/LogoutButton';
 import AssetOption from '../components/AssetOption';
 import { useInvestmentProcessing } from '../hooks/useInvestmentProcessing';
@@ -47,7 +47,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
   } = useInvestmentProcessing({ sessionId, allocationId, assetType });
 
   const parsedQuantity = Number(quantity.replace(/[^\d.]/g, ''));
-  const totalCost = selectedAsset ? selectedAsset.buyPrice * parsedQuantity : 0;
+  const totalCost = selectedAsset ? selectedAsset.currentPrice * parsedQuantity : 0;
   const isValidQuantity = parsedQuantity > 0 && totalCost <= recommendedAmount;
   const residual = recommendedAmount - totalCost;
 
@@ -218,7 +218,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
               <h2 className="text-base font-semibold text-slate-900 mb-1">Số lượng</h2>
               <p className="text-xs text-slate-500 mb-4">
                 {selectedAsset
-                  ? `Giá mua: ${formatCurrency(selectedAsset.buyPrice)} / đơn vị`
+                  ? `Giá hiện tại: ${formatUnitPrice(selectedAsset.currentPrice)} / đơn vị`
                   : 'Chọn tài sản trước'}
               </p>
               <input
@@ -292,7 +292,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
                 { label: 'Mã tài sản', value: selectResult.assetCode },
                 { label: 'Tên tài sản', value: selectResult.assetName },
                 { label: 'Số lượng', value: String(selectResult.quantity) },
-                { label: 'Giá mua', value: formatCurrency(selectResult.buyPrice) },
+                { label: 'Giá hiện tại', value: formatUnitPrice(selectResult.currentPrice) },
                 { label: 'Đã đầu tư', value: formatCurrency(selectResult.investedAmount) },
                 { label: 'Dư lại', value: formatCurrency(selectResult.residualAmount) },
               ].map(({ label, value }) => (

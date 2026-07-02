@@ -4,8 +4,7 @@
 export interface AssetPriceAdminResponse {
   id: number;
   productId: number;
-  buyPrice: number;
-  sellPrice: number;
+  currentPrice: number;
   priceDate: string | null;
   isLatest: boolean | null;
   isActive: boolean | null;
@@ -15,16 +14,14 @@ export interface AssetPriceAdminResponse {
 
 export interface CreateAssetPriceRequest {
   productId: number;
-  buyPrice: number;
-  sellPrice: number;
+  currentPrice: number;
   priceDate: string | null;
 }
 
 export interface UpdateAssetPriceRequest {
   id: number;
   productId: number;
-  buyPrice: number;
-  sellPrice: number;
+  currentPrice: number;
   priceDate: string | null;
 }
 

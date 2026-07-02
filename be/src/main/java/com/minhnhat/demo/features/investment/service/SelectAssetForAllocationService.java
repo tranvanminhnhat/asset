@@ -132,10 +132,10 @@ public class SelectAssetForAllocationService {
                 });
 
         log.debug("Asset loaded: productId={}, assetCode={}, assetType={}, buyPrice={}",
-                finalProductId, ctx.assetCode, requestAssetType, ctx.asset.getBuyPrice());
+                finalProductId, ctx.assetCode, requestAssetType, ctx.asset.getCurrentPrice());
 
         // Validate total invested amount
-        BigDecimal investedAmount = ctx.request.getQuantity().multiply(ctx.asset.getBuyPrice());
+        BigDecimal investedAmount = ctx.request.getQuantity().multiply(ctx.asset.getCurrentPrice());
         BigDecimal totalInvested = ctx.allocation.getInvestedAmount().add(investedAmount);
 
         if (totalInvested.compareTo(ctx.allocation.getRecommendedAmount()) > 0) {
@@ -150,7 +150,7 @@ public class SelectAssetForAllocationService {
     private void processBusiness(Context ctx) {
         log.debug("Processing business logic: allocationId={}", ctx.allocationId);
 
-        BigDecimal investedAmount = ctx.request.getQuantity().multiply(ctx.asset.getBuyPrice());
+        BigDecimal investedAmount = ctx.request.getQuantity().multiply(ctx.asset.getCurrentPrice());
 
         // Create asset selection record
         InvestmentAssetSelectionEntity selection = InvestmentAssetSelectionEntity.builder()
@@ -160,7 +160,7 @@ public class SelectAssetForAllocationService {
                 .assetName(ctx.assetName)  // Use product name from DB
                 .categoryCode(ctx.request.getAssetType())  // Store asset type as categoryCode
                 .quantity(ctx.request.getQuantity())
-                .buyPrice(ctx.asset.getBuyPrice())
+                .buyPrice(ctx.asset.getCurrentPrice())
                 .investedAmount(investedAmount)
                 .productId(ctx.request.getProductId())  // Store productId reference
                 .build();

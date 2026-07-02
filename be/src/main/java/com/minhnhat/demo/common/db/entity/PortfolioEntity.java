@@ -32,6 +32,9 @@ public class PortfolioEntity extends BaseEntity {
 
     @Column(name = "total_invested", nullable = false, precision = 19, scale = 2)
     private BigDecimal totalInvested;
+
+    @Column(name = "buy_price", nullable = true, precision = 19, scale = 6)
+    private BigDecimal buyPrice;
 }
 
 

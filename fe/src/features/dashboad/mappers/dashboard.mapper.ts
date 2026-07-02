@@ -49,7 +49,7 @@ export const toDashboardPayload = (
     totalTransactions?: number;
   };
 
-  const currency = rawSummary.currency ?? 'USD';
+  const currency = rawSummary.currency ?? 'VND';
   const totalInvestedCost = toNumber(rawSummary.totalInvestedCost ?? rawSummary.totalPurchaseValue ?? rawSummary.totalInvested);
   const totalPurchaseValue = totalInvestedCost;
   const totalCurrentValue = toNumber(rawSummary.totalCurrentValue ?? totalPurchaseValue);

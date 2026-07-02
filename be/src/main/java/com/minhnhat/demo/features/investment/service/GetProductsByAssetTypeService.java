@@ -78,8 +78,7 @@ public class GetProductsByAssetTypeService {
                             .assetType(ctx.assetType)
                             .assetName(product.getName())
                             .platformName(platform != null ? platform.getName() : "")
-                            .buyPrice(price != null ? price.getBuyPrice() : null)
-                            .sellPrice(price != null ? price.getSellPrice() : null)
+                            .currentPrice(price != null ? price.getCurrentPrice() : null)
                             .build();
                 })
                 .collect(Collectors.toList());

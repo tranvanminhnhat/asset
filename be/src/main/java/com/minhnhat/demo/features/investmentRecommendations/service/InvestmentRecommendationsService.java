@@ -412,7 +412,7 @@ public class InvestmentRecommendationsService {
             // Return the latest prices for any active product
             return assetPriceRepository.findAllLatestPrices().stream()
                     .findFirst()
-                    .map(AssetPriceEntity::getBuyPrice)
+                    .map(AssetPriceEntity::getCurrentPrice)
                     .orElse(BigDecimal.ZERO);
         } catch (Exception e) {
             log.warn("Error loading asset price for assetType={}: {}", assetType, e.getMessage());

@@ -97,7 +97,7 @@ const AssetPricePage: React.FC = () => {
     <div className="p-6 animate-fade-up">
       <PageHeader
         title="Quản lý Giá Tài sản"
-        description="CRUD giá mua/bán tài sản (POST /api/v1/admin/price)"
+        description="CRUD giá hiện tại tài sản (POST /api/v1/admin/price)"
         actions={
           <Button variant="primary" size="sm" onClick={() => { setEditItem(null); setFormOpen(true); }}>
             + Thêm giá
@@ -126,7 +126,7 @@ const AssetPricePage: React.FC = () => {
           <table className="min-w-full">
             <thead>
               <tr className="bg-slate-900">
-                {['ID', 'Product ID', 'Giá mua', 'Giá bán', 'Ngày giá', 'Active', 'Thao tác'].map((h) => (
+                {['ID', 'Product ID', 'Giá hiện tại', 'Ngày giá', 'Active', 'Thao tác'].map((h) => (
                   <th key={h} className="px-4 py-3.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                     {h}
                   </th>
@@ -136,7 +136,7 @@ const AssetPricePage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400">
                     Chưa có dữ liệu. Tìm theo ID hoặc tạo mới.
                   </td>
                 </tr>
@@ -144,8 +144,7 @@ const AssetPricePage: React.FC = () => {
                 <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="px-4 py-3 text-sm text-slate-500 font-mono">#{item.id}</td>
                   <td className="px-4 py-3 text-sm text-slate-700">#{item.productId}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-emerald-700">{item.buyPrice?.toLocaleString('vi-VN')} ₫</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-rose-600">{item.sellPrice?.toLocaleString('vi-VN')} ₫</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-emerald-700">{item.currentPrice?.toLocaleString('vi-VN')} ₫</td>
                   <td className="px-4 py-3 text-sm text-slate-500">{item.priceDate ? formatDateTime(item.priceDate) : '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -191,16 +190,15 @@ interface FormModalProps {
 
 const AssetPriceFormModal: React.FC<FormModalProps> = ({ item, onClose, onCreate, onUpdate, isLoading }) => {
   const [productId, setProductId] = useState(String(item?.productId ?? ''));
-  const [buyPrice, setBuyPrice] = useState(String(item?.buyPrice ?? ''));
-  const [sellPrice, setSellPrice] = useState(String(item?.sellPrice ?? ''));
+  const [currentPrice, setCurrentPrice] = useState(String(item?.currentPrice ?? ''));
   const [priceDate, setPriceDate] = useState(item?.priceDate?.slice(0, 16) ?? '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (item) {
-      onUpdate({ id: item.id, productId: Number(productId), buyPrice: Number(buyPrice), sellPrice: Number(sellPrice), priceDate: priceDate || null });
+      onUpdate({ id: item.id, productId: Number(productId), currentPrice: Number(currentPrice), priceDate: priceDate || null });
     } else {
-      onCreate({ productId: Number(productId), buyPrice: Number(buyPrice), sellPrice: Number(sellPrice), priceDate: priceDate || null });
+      onCreate({ productId: Number(productId), currentPrice: Number(currentPrice), priceDate: priceDate || null });
     }
   };
 
@@ -221,12 +219,8 @@ const AssetPriceFormModal: React.FC<FormModalProps> = ({ item, onClose, onCreate
             <input type="number" value={productId} onChange={(e) => setProductId(e.target.value)} required className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Giá mua (VND) *</label>
-            <input type="number" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)} required className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Giá bán (VND) *</label>
-            <input type="number" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)} required className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" />
+            <label className="block text-xs font-medium text-slate-700 mb-1">Giá hiện tại (VND) *</label>
+            <input type="number" value={currentPrice} onChange={(e) => setCurrentPrice(e.target.value)} required className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">Ngày giá</label>

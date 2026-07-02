@@ -1,15 +1,26 @@
 export const formatCurrency = (
   value: number,
-  currency = 'VND',
+  _currency = 'VND',
   locale = 'vi-VN',
 ) => {
-  const usesMinorUnits = currency !== 'VND';
-
   return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency,
-    minimumFractionDigits: usesMinorUnits ? 2 : 0,
-    maximumFractionDigits: usesMinorUnits ? 2 : 0,
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+export const formatUnitPrice = (
+  value: number,
+  locale = 'vi-VN',
+  fractionDigits = 6,
+) => {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(value);
 };
 

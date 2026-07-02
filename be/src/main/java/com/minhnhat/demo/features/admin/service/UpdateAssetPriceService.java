@@ -39,8 +39,8 @@ public class UpdateAssetPriceService {
         if (ctx.request.getProductId() == null) {
             throw new IllegalArgumentException("Product id is required");
         }
-        if (ctx.request.getBuyPrice() == null) {
-            throw new IllegalArgumentException("Buy price is required");
+        if (ctx.request.getCurrentPrice() == null) {
+            throw new IllegalArgumentException("Current price is required");
         }
 
         productRepository.findById(ctx.request.getProductId())
@@ -54,21 +54,19 @@ public class UpdateAssetPriceService {
 
     private void processBusiness(Context ctx) {
         ctx.price.setProductId(ctx.request.getProductId());
-        ctx.price.setBuyPrice(ctx.request.getBuyPrice());
-        ctx.price.setSellPrice(ctx.request.getSellPrice());
+        ctx.price.setCurrentPrice(ctx.request.getCurrentPrice());
         if (ctx.request.getPriceDate() != null) {
             ctx.price.setPriceDate(ctx.request.getPriceDate());
         }
         ctx.price = priceRepository.save(ctx.price);
-        log.info("Asset price updated: id={}, productId={}, buyPrice={}", ctx.request.getId(), ctx.request.getProductId(), ctx.request.getBuyPrice());
+        log.info("Asset price updated: id={}, productId={}, currentPrice={}", ctx.request.getId(), ctx.request.getProductId(), ctx.request.getCurrentPrice());
     }
 
     private ApiResponse<AssetPriceResponse> createResponse(Context ctx) {
         AssetPriceResponse response = AssetPriceResponse.builder()
                 .id(ctx.price.getId())
                 .productId(ctx.price.getProductId())
-                .buyPrice(ctx.price.getBuyPrice())
-                .sellPrice(ctx.price.getSellPrice())
+                .currentPrice(ctx.price.getCurrentPrice())
                 .priceDate(ctx.price.getPriceDate())
                 .isLatest(ctx.price.getIsLatest())
                 .isActive(ctx.price.getIsActive())

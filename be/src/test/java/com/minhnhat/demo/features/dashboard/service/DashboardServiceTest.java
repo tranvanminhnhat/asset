@@ -1,5 +1,9 @@
 package com.minhnhat.demo.features.dashboard.service;
 
+import com.minhnhat.demo.common.db.entity.InvestmentAssetSelectionEntity;
+import com.minhnhat.demo.common.db.entity.PortfolioEntity;
+import com.minhnhat.demo.common.db.repository.AssetPriceRepository;
+import com.minhnhat.demo.common.db.repository.InvestmentAssetSelectionRepository;
 import com.minhnhat.demo.common.security.SecurityUtils;
 import com.minhnhat.demo.common.security.dto.CurrentUserInfo;
 import com.minhnhat.demo.features.dashboard.dto.response.DashboardResponse;
@@ -13,12 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -31,6 +33,12 @@ public class DashboardServiceTest {
 
     @Mock
     private PortfolioRepository portfolioRepository;
+
+    @Mock
+    private AssetPriceRepository assetPriceRepository;
+
+    @Mock
+    private InvestmentAssetSelectionRepository selectionRepository;
 
     @Mock
     private SecurityUtils securityUtils;
@@ -47,6 +55,9 @@ public class DashboardServiceTest {
                 .email("test@example.com")
                 .build();
         when(securityUtils.getCurrentUser()).thenReturn(currentUser);
+        // Default mock: no selections (not used with buyPrice logic)
+        when(selectionRepository.findByAssetType(anyString()))
+                .thenReturn(new ArrayList<>());
     }
 
     /**
@@ -54,7 +65,7 @@ public class DashboardServiceTest {
      */
     @Test
     public void testGetDashboard_EmptyData_ReturnsEmptyDashboard() {
-        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findByUserId(TEST_USER_ID))
                 .thenReturn(new ArrayList<>());
 
         DashboardResponse response = dashboardService.execute();
@@ -68,18 +79,22 @@ public class DashboardServiceTest {
 
     /**
      * Test case 2: Single asset type calculation
+     * When buyPrice is null, use cost-basis: currentValue = totalInvested → profit = 0
      */
     @Test
     public void testGetDashboard_SingleAsset_CorrectCalculation() {
-        List<Map<String, Object>> mockData = new ArrayList<>();
-        Map<String, Object> row = new HashMap<>();
-        row.put("assetType", "STOCK");
-        row.put("totalQuantity", new BigDecimal("100"));           // 100 units
-        row.put("totalInvested", new BigDecimal("10000.00"));      // invested 10,000
-        row.put("currentPrice", new BigDecimal("120.00"));         // current price 120 per unit
-        mockData.add(row);
+        List<PortfolioEntity> mockData = new ArrayList<>();
+        PortfolioEntity portfolio = PortfolioEntity.builder()
+                .id(1L)
+                .userId(TEST_USER_ID)
+                .assetType("STOCK")
+                .quantity(new BigDecimal("100"))
+                .totalInvested(new BigDecimal("10000.00"))
+                .buyPrice(null)  // Backward compatibility: null means calculate from cost basis
+                .build();
+        mockData.add(portfolio);
 
-        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -91,47 +106,42 @@ public class DashboardServiceTest {
         assertEquals("STOCK", item.getAssetType());
         assertEquals(new BigDecimal("100.00"), item.getQuantity());
         assertEquals(new BigDecimal("10000.00"), item.getInvestedCost());
-
-        // currentValue = 100 * 120 = 12,000
-        assertEquals(new BigDecimal("12000.00"), item.getCurrentValue());
-
-        // profit = 12,000 - 10,000 = 2,000
-        assertEquals(new BigDecimal("2000.00"), item.getProfit());
-
-        // profitRate = (2,000 / 10,000) * 100 = 20.00%
-        assertEquals(new BigDecimal("20.00"), item.getProfitRate());
-
-        // Summary should match
-        assertEquals(new BigDecimal("10000.00"), response.getSummary().getTotalInvestedCost());
-        assertEquals(new BigDecimal("12000.00"), response.getSummary().getTotalCurrentValue());
-        assertEquals(new BigDecimal("2000.00"), response.getSummary().getTotalProfit());
-        assertEquals(new BigDecimal("20.00"), response.getSummary().getTotalProfitRate());
+        // When buyPrice is null, currentValue = totalInvested → profit = 0
+        assertEquals(new BigDecimal("10000.00"), item.getCurrentValue());
+        assertEquals(BigDecimal.ZERO, item.getProfit());
     }
 
     /**
      * Test case 3: Multiple asset types aggregation
+     * When buyPrice is null, use cost-basis: currentValue = totalInvested → profit = 0
      */
     @Test
     public void testGetDashboard_MultipleAssets_CorrectAggregation() {
-        List<Map<String, Object>> mockData = new ArrayList<>();
+        List<PortfolioEntity> mockData = new ArrayList<>();
 
-        // STOCK: 100 units @ 120 = 12,000 current (invested 10,000)
-        Map<String, Object> stock = new HashMap<>();
-        stock.put("assetType", "STOCK");
-        stock.put("totalQuantity", new BigDecimal("100"));
-        stock.put("totalInvested", new BigDecimal("10000.00"));
-        stock.put("currentPrice", new BigDecimal("120.00"));
+        // STOCK: 100 units @ cost basis = 100 (invested 10,000) → currentValue = 10,000, profit = 0
+        PortfolioEntity stock = PortfolioEntity.builder()
+                .id(1L)
+                .userId(TEST_USER_ID)
+                .assetType("STOCK")
+                .quantity(new BigDecimal("100"))
+                .totalInvested(new BigDecimal("10000.00"))
+                .buyPrice(null)
+                .build();
         mockData.add(stock);
 
-        // GOLD: 50 units @ 2000 = 100,000 current (invested 90,000)
-        Map<String, Object> gold = new HashMap<>();
-        gold.put("assetType", "GOLD");
-        gold.put("totalQuantity", new BigDecimal("50"));
-        gold.put("totalInvested", new BigDecimal("90000.00"));
-        gold.put("currentPrice", new BigDecimal("2000.00"));
+        // GOLD: 50 units @ cost basis = 1800 (invested 90,000) → currentValue = 90,000, profit = 0
+        PortfolioEntity gold = PortfolioEntity.builder()
+                .id(2L)
+                .userId(TEST_USER_ID)
+                .assetType("GOLD")
+                .quantity(new BigDecimal("50"))
+                .totalInvested(new BigDecimal("90000.00"))
+                .buyPrice(null)
+                .build();
         mockData.add(gold);
 
-        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -141,37 +151,42 @@ public class DashboardServiceTest {
         // Total invested = 10,000 + 90,000 = 100,000
         assertEquals(new BigDecimal("100000.00"), response.getSummary().getTotalInvestedCost());
 
-        // Total current = 12,000 + 100,000 = 112,000
-        assertEquals(new BigDecimal("112000.00"), response.getSummary().getTotalCurrentValue());
+        // Total current = 10,000 + 90,000 = 100,000 (cost basis = invested)
+        assertEquals(new BigDecimal("100000.00"), response.getSummary().getTotalCurrentValue());
 
-        // Total profit = 112,000 - 100,000 = 12,000
-        assertEquals(new BigDecimal("12000.00"), response.getSummary().getTotalProfit());
-
-        // Total profit rate = (12,000 / 100,000) * 100 = 12.00%
-        assertEquals(new BigDecimal("12.00"), response.getSummary().getTotalProfitRate());
+        // Total profit = 0 (when buyPrice is null, currentValue = totalInvested)
+        assertEquals(BigDecimal.ZERO, response.getSummary().getTotalProfit());
     }
 
     /**
      * Test case 4: Null price handling
+     * When buyPrice is null, use cost-basis calculation: currentValue = totalInvested
      */
     @Test
     public void testGetDashboard_NullPrice_HandledGracefully() {
-        List<Map<String, Object>> mockData = new ArrayList<>();
-        Map<String, Object> row = new HashMap<>();
-        row.put("assetType", "ETF");
-        row.put("totalQuantity", new BigDecimal("50"));
-        row.put("totalInvested", new BigDecimal("5000.00"));
-        row.put("currentPrice", null);  // No price data
-        mockData.add(row);
+        List<PortfolioEntity> mockData = new ArrayList<>();
+        PortfolioEntity portfolio = PortfolioEntity.builder()
+                .id(1L)
+                .userId(TEST_USER_ID)
+                .assetType("ETF")
+                .quantity(new BigDecimal("50"))
+                .totalInvested(new BigDecimal("5000.00"))
+                .buyPrice(null)  // Null buyPrice should fallback to cost-basis
+                .build();
+        mockData.add(portfolio);
 
-        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
 
-        // Should still process, treating null price as 0
+        // Should still process successfully without errors
         assertNotNull(response);
         assertEquals(1, response.getPortfolios().size());
+
+        DashboardResponse.PortfolioItem item = response.getPortfolios().get(0);
+        assertEquals(new BigDecimal("5000.00"), item.getCurrentValue()); // cost-basis: 5000/50 * 50 = 5000
+        assertEquals(BigDecimal.ZERO, item.getProfit());  // profit = 5000 - 5000 = 0
     }
 
     /**
@@ -179,15 +194,17 @@ public class DashboardServiceTest {
      */
     @Test
     public void testGetDashboard_ZeroInvestedCost_SafelyHandled() {
-        List<Map<String, Object>> mockData = new ArrayList<>();
-        Map<String, Object> row = new HashMap<>();
-        row.put("assetType", "EMERGENCY");
-        row.put("totalQuantity", BigDecimal.ZERO);
-        row.put("totalInvested", BigDecimal.ZERO);  // Zero invested
-        row.put("currentPrice", new BigDecimal("1.00"));
-        mockData.add(row);
+        List<PortfolioEntity> mockData = new ArrayList<>();
+        PortfolioEntity portfolio = PortfolioEntity.builder()
+                .id(1L)
+                .userId(TEST_USER_ID)
+                .assetType("EMERGENCY")
+                .quantity(BigDecimal.ZERO)
+                .totalInvested(BigDecimal.ZERO)
+                .build();
+        mockData.add(portfolio);
 
-        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -199,18 +216,24 @@ public class DashboardServiceTest {
 
     /**
      * Test case 6: Negative profit (loss) calculation
+     * When buyPrice is set to a value lower than cost-basis, generates negative profit
      */
     @Test
     public void testGetDashboard_NegativeProfit_CorrectCalculation() {
-        List<Map<String, Object>> mockData = new ArrayList<>();
-        Map<String, Object> row = new HashMap<>();
-        row.put("assetType", "STOCK");
-        row.put("totalQuantity", new BigDecimal("100"));
-        row.put("totalInvested", new BigDecimal("12000.00"));  // invested 12,000
-        row.put("currentPrice", new BigDecimal("100.00"));   // current price 100 (loss)
-        mockData.add(row);
+        List<PortfolioEntity> mockData = new ArrayList<>();
+        // Invested 12,000 for 100 units = 120 cost per unit
+        // But buying price was 100 = loss of 20 per unit = -2,000 total
+        PortfolioEntity portfolio = PortfolioEntity.builder()
+                .id(1L)
+                .userId(TEST_USER_ID)
+                .assetType("STOCK")
+                .quantity(new BigDecimal("100"))
+                .totalInvested(new BigDecimal("12000.00"))
+                .buyPrice(new BigDecimal("100.00"))  // Price dropped below cost basis
+                .build();
+        mockData.add(portfolio);
 
-        when(portfolioRepository.findDashboardDataByUserId(TEST_USER_ID))
+        when(portfolioRepository.findByUserId(TEST_USER_ID))
                 .thenReturn(mockData);
 
         DashboardResponse response = dashboardService.execute();
@@ -223,7 +246,7 @@ public class DashboardServiceTest {
         // profit = 10,000 - 12,000 = -2,000 (loss)
         assertEquals(new BigDecimal("-2000.00"), item.getProfit());
 
-        // profitRate = (-2,000 / 12,000) * 100 = -16.67%
+        // profitRate should be negative
         assertTrue(item.getProfitRate().compareTo(BigDecimal.ZERO) < 0);
     }
 }

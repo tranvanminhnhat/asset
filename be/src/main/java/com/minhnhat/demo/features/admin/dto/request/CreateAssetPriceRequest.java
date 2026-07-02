@@ -14,8 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CreateAssetPriceRequest {
     private Long productId;
-    private BigDecimal buyPrice;
-    private BigDecimal sellPrice;
+    private BigDecimal currentPrice;
     private LocalDateTime priceDate;
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrency } from '@/lib/formatters';
+import { formatUnitPrice } from '@/lib/formatters';
 import { AssetPrice } from '../type/investment-processing.type';
 
 interface AssetOptionProps {
@@ -35,7 +35,7 @@ const AssetOption: React.FC<AssetOptionProps> = ({ asset, isSelected, onClick })
               {asset.assetCode ?? `ID-${asset.productId}`}
             </p>
             <p className="text-sm font-bold text-slate-900 shrink-0">
-              {formatCurrency(asset.buyPrice)}
+              {formatUnitPrice(asset.currentPrice)}
             </p>
           </div>
           <p className="text-xs text-slate-500 mt-0.5 truncate">{asset.assetName ?? `Product #${asset.productId}`}</p>
