@@ -17,9 +17,6 @@ public class ProductWithPriceResponse {
     private String platformName;
 
     @JsonFormat(shape = JsonFormat.Shape.NUMBER_FLOAT)
-    private BigDecimal buyPrice;
-
-    @JsonFormat(shape = JsonFormat.Shape.NUMBER_FLOAT)
-    private BigDecimal sellPrice;
+    private BigDecimal currentPrice;
 }
 

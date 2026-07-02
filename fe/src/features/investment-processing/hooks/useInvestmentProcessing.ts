@@ -17,7 +17,7 @@ export const useInvestmentProcessing = ({ sessionId, allocationId, assetType }: 
     data: productsResponse,
     isLoading: isLoadingAssets,
     isError: isAssetsError,
-  } = useGetProductsByAssetTypeQuery(assetType);
+  } = useGetProductsByAssetTypeQuery(assetType, { skip: !assetType });
 
   const [selectAsset, { isLoading: isSelecting, isError: isSelectError, error: selectError }] =
     useSelectAssetForAllocationMutation();
@@ -32,8 +32,7 @@ export const useInvestmentProcessing = ({ sessionId, allocationId, assetType }: 
     assetCode: p.assetCode,
     assetType: p.assetType,
     assetName: p.assetName,
-    buyPrice: p.buyPrice,
-    sellPrice: p.sellPrice,
+    currentPrice: p.currentPrice,
     priceDate: null,
     isLatest: true,
     isActive: true,
@@ -41,7 +40,12 @@ export const useInvestmentProcessing = ({ sessionId, allocationId, assetType }: 
 
   const submitSelect = async (request: SelectAssetRequest): Promise<SelectAssetResponse | null> => {
     const response = await selectAsset({ sessionId, allocationId, body: request }).unwrap();
-    const result = response.data ?? null;
+    const result = response.data
+      ? {
+          ...response.data,
+          currentPrice: response.data.buyPrice ?? response.data.currentPrice,
+        }
+      : null;
     setSelectResult(result);
     return result;
   };

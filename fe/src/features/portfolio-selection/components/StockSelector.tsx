@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrency, formatUnitPrice } from '@/lib/formatters';
 import { StockOption } from '../type/portfolio-selection.type';
 
 interface StockSelectorProps {
@@ -15,14 +16,6 @@ const StockSelector: React.FC<StockSelectorProps> = ({ stocks, selectedId, onSel
     stock.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     stock.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
 
   return (
     <div className="space-y-4">
@@ -73,7 +66,7 @@ const StockSelector: React.FC<StockSelectorProps> = ({ stocks, selectedId, onSel
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3 text-sm">
               <div>
                 <p className="text-slate-600">Giá hiện tại</p>
-                <p className="font-semibold text-slate-900">{formatCurrency(stock.currentPrice)}</p>
+                <p className="font-semibold text-slate-900">{formatUnitPrice(stock.currentPrice)}</p>
               </div>
               <div>
                 <p className="text-slate-600">Thay đổi</p>

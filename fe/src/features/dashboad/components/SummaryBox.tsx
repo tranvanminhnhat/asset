@@ -18,7 +18,7 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
             Tổng quan tài sản
           </p>
           <p className="text-2xl font-bold text-white tracking-tight">
-            {formatCurrency(summary.totalCurrentValue, summary.currency)}
+            {formatCurrency(summary.totalCurrentValue)}
           </p>
         </div>
         <div className="text-right">
@@ -34,14 +34,14 @@ const SummaryBox: React.FC<SummaryBoxProps> = ({ summary }) => {
         <div className="px-6 py-5">
           <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-1.5">Vốn đầu tư</p>
           <p className="text-xl font-bold text-slate-900 tracking-tight">
-            {formatCurrency(summary.totalInvestedCost, summary.currency)}
+            {formatCurrency(summary.totalInvestedCost)}
           </p>
         </div>
 
         <div className="px-6 py-5">
           <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-1.5">Lợi nhuận</p>
           <p className={`text-xl font-bold tracking-tight ${isProfit ? 'text-emerald-600' : 'text-red-600'}`}>
-            {isProfit ? '+' : ''}{formatCurrency(Math.abs(summary.totalProfit), summary.currency)}
+            {isProfit ? '+' : ''}{formatCurrency(Math.abs(summary.totalProfit))}
           </p>
           <p className={`text-xs font-semibold mt-0.5 ${isProfit ? 'text-emerald-500' : 'text-red-500'}`}>
             {isProfit ? '▲' : '▼'} {formatPercentage(Math.abs(summary.totalProfitRate))}

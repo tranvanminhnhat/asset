@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,9 @@ public class FinalizeInvestmentSessionService {
             if (allocation.getInvestedAmount() != null && allocation.getInvestedAmount().compareTo(BigDecimal.ZERO) > 0) {
                 // Calculate total quantity for this allocation's asset selections
                 BigDecimal totalQuantity = calculateAllocationQuantity(allocation.getId());
-                insertOrUpdatePortfolio(ctx.userId, allocation.getAssetType(), allocation.getInvestedAmount(), totalQuantity);
+                // Calculate average buy price from asset selections
+                BigDecimal avgBuyPrice = calculateAverageBuyPrice(allocation.getId());
+                insertOrUpdatePortfolio(ctx.userId, allocation.getAssetType(), allocation.getInvestedAmount(), totalQuantity, avgBuyPrice);
             }
         }
 
@@ -159,6 +162,31 @@ public class FinalizeInvestmentSessionService {
     }
 
     /**
+     * Calculate average buy price for an allocation
+     * Weighted average: sum(quantity × buy_price) / sum(quantity)
+     */
+    private BigDecimal calculateAverageBuyPrice(Long allocationId) {
+        List<InvestmentAssetSelectionEntity> selections = selectionRepository.findByAllocationId(allocationId);
+        if (selections == null || selections.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal totalWeightedPrice = selections.stream()
+                .map(s -> s.getQuantity().multiply(s.getBuyPrice()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalQuantity = selections.stream()
+                .map(InvestmentAssetSelectionEntity::getQuantity)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalQuantity.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return totalWeightedPrice.divide(totalQuantity, 6, RoundingMode.HALF_UP);
+    }
+
+    /**
      * Insert or update portfolio entry for an asset
      * Handles accumulation of investments from multiple rounds
      * Special case: EMERGENCY fund only accumulates (no profit/loss calculation)
@@ -166,31 +194,52 @@ public class FinalizeInvestmentSessionService {
      * For non-EMERGENCY assets:
      * - Uses actual quantity from investment selections
      * - Accumulates to existing portfolio quantity
+     * - Stores average buy price for profit/loss calculation
      *
      * @param userId the user ID
      * @param assetType the asset type (GOLD, ETF, STOCK, EMERGENCY)
      * @param investedAmount the final amount invested in this asset
      * @param selectionQuantity total quantity from asset selections for this allocation
+     * @param avgBuyPrice average buy price of selected assets
      */
-    private void insertOrUpdatePortfolio(String userId, String assetType, BigDecimal investedAmount, BigDecimal selectionQuantity) {
+    private void insertOrUpdatePortfolio(String userId, String assetType, BigDecimal investedAmount, BigDecimal selectionQuantity, BigDecimal avgBuyPrice) {
         Optional<PortfolioEntity> existing = portfolioRepository.findByUserIdAndAssetType(userId, assetType);
 
         if (existing.isPresent()) {
             // Update existing portfolio: accumulate investment
             PortfolioEntity portfolio = existing.get();
+
+            // For non-EMERGENCY: calculate new weighted average buy price
+            if (!InvestmentWorkflowConstant.ASSET_TYPE_EMERGENCY.equals(assetType)) {
+                BigDecimal existingQuantity = portfolio.getQuantity();
+                BigDecimal existingBuyPrice = portfolio.getBuyPrice() != null ? portfolio.getBuyPrice() : BigDecimal.ZERO;
+
+                // New weighted average: (existing_qty × existing_price + new_qty × new_price) / (existing_qty + new_qty)
+                if (existingQuantity.compareTo(BigDecimal.ZERO) > 0 && existingBuyPrice.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal newWeightedPrice = existingQuantity.multiply(existingBuyPrice)
+                            .add(selectionQuantity.multiply(avgBuyPrice))
+                            .divide(existingQuantity.add(selectionQuantity), 6, RoundingMode.HALF_UP);
+                    portfolio.setBuyPrice(newWeightedPrice);
+                } else {
+                    portfolio.setBuyPrice(avgBuyPrice);
+                }
+            }
+
             portfolio.setTotalInvested(portfolio.getTotalInvested().add(investedAmount));
 
             // For EMERGENCY: quantity = total (since it's cash equivalent, no price conversion)
             if (InvestmentWorkflowConstant.ASSET_TYPE_EMERGENCY.equals(assetType)) {
                 portfolio.setQuantity(portfolio.getTotalInvested());
             } else {
-                // For other assets: accumulate the quantity from selections
-                portfolio.setQuantity(portfolio.getQuantity().add(selectionQuantity));
+                // For other assets: accumulate the quantity from selections with proper rounding
+                BigDecimal newQuantity = portfolio.getQuantity().add(selectionQuantity)
+                        .setScale(6, RoundingMode.HALF_UP);
+                portfolio.setQuantity(newQuantity);
             }
 
             portfolioRepository.save(portfolio);
-            log.info("Portfolio updated: userId={}, assetType={}, newTotal={}, quantity={}",
-                    userId, assetType, portfolio.getTotalInvested(), portfolio.getQuantity());
+            log.info("Portfolio updated: userId={}, assetType={}, newTotal={}, quantity={}, buyPrice={}",
+                    userId, assetType, portfolio.getTotalInvested(), portfolio.getQuantity(), portfolio.getBuyPrice());
         } else {
             // Create new portfolio entry
             BigDecimal quantity;
@@ -207,10 +256,11 @@ public class FinalizeInvestmentSessionService {
                     .assetType(assetType)
                     .totalInvested(investedAmount)
                     .quantity(quantity)
+                    .buyPrice(InvestmentWorkflowConstant.ASSET_TYPE_EMERGENCY.equals(assetType) ? null : avgBuyPrice)
                     .build();
             portfolioRepository.save(portfolio);
-            log.info("Portfolio created: userId={}, assetType={}, amount={}, quantity={}",
-                    userId, assetType, investedAmount, quantity);
+            log.info("Portfolio created: userId={}, assetType={}, amount={}, quantity={}, buyPrice={}",
+                    userId, assetType, investedAmount, quantity, portfolio.getBuyPrice());
         }
     }
 

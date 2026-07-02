@@ -35,8 +35,8 @@ public class CreateAssetPriceService {
         if (ctx.request.getProductId() == null) {
             throw new IllegalArgumentException("Product id is required");
         }
-        if (ctx.request.getBuyPrice() == null) {
-            throw new IllegalArgumentException("Buy price is required");
+        if (ctx.request.getCurrentPrice() == null) {
+            throw new IllegalArgumentException("Current price is required");
         }
 
         productRepository.findById(ctx.request.getProductId())
@@ -55,22 +55,20 @@ public class CreateAssetPriceService {
         LocalDateTime priceDate = ctx.request.getPriceDate() != null ? ctx.request.getPriceDate() : LocalDateTime.now();
         AssetPriceEntity price = AssetPriceEntity.builder()
                 .productId(ctx.request.getProductId())
-                .buyPrice(ctx.request.getBuyPrice())
-                .sellPrice(ctx.request.getSellPrice())
+                .currentPrice(ctx.request.getCurrentPrice())
                 .priceDate(priceDate)
                 .isLatest(true)
                 .isActive(true)
                 .build();
         ctx.savedPrice = priceRepository.save(price);
-        log.info("Asset price created: productId={}, buyPrice={}", ctx.request.getProductId(), ctx.request.getBuyPrice());
+        log.info("Asset price created: productId={}, currentPrice={}", ctx.request.getProductId(), ctx.request.getCurrentPrice());
     }
 
     private ApiResponse<AssetPriceResponse> createResponse(Context ctx) {
         AssetPriceResponse response = AssetPriceResponse.builder()
                 .id(ctx.savedPrice.getId())
                 .productId(ctx.savedPrice.getProductId())
-                .buyPrice(ctx.savedPrice.getBuyPrice())
-                .sellPrice(ctx.savedPrice.getSellPrice())
+                .currentPrice(ctx.savedPrice.getCurrentPrice())
                 .priceDate(ctx.savedPrice.getPriceDate())
                 .isLatest(ctx.savedPrice.getIsLatest())
                 .isActive(ctx.savedPrice.getIsActive())

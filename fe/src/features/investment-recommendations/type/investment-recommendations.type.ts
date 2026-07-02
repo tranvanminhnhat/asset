@@ -16,7 +16,7 @@ export interface AssetSelection {
   assetCode: string;
   assetName: string;
   quantity: number;
-  buyPrice: number;
+  currentPrice: number;
   investedAmount: number;
   createdAt: string;
 }

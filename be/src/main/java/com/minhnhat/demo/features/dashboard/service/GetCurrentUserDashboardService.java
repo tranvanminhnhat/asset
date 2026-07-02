@@ -4,7 +4,6 @@ import com.minhnhat.demo.common.db.entity.AssetPriceEntity;
 import com.minhnhat.demo.common.db.entity.InvestmentAssetSelectionEntity;
 import com.minhnhat.demo.common.db.entity.PortfolioEntity;
 import com.minhnhat.demo.common.db.repository.AssetPriceRepository;
-import com.minhnhat.demo.common.db.repository.AssetProductRepository;
 import com.minhnhat.demo.common.db.repository.InvestmentAssetSelectionRepository;
 import com.minhnhat.demo.common.db.repository.PortfolioRepository;
 import com.minhnhat.demo.common.security.SecurityUtils;
@@ -27,12 +26,12 @@ import java.util.Map;
 public class GetCurrentUserDashboardService {
 
     private final PortfolioRepository portfolioRepository;
-    private final AssetProductRepository assetProductRepository;
     private final AssetPriceRepository assetPriceRepository;
     private final InvestmentAssetSelectionRepository selectionRepository;
     private final SecurityUtils securityUtils;
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
+    private static final int SCALE_6 = 6;
     private static final int SCALE_4 = 4;
     private static final int SCALE_2 = 2;
 
@@ -107,9 +106,24 @@ public class GetCurrentUserDashboardService {
                     .build();
         }
 
-        // For other assets: fetch current price and calculate current value
-        BigDecimal currentPrice = getCurrentPriceForAssetType(assetType);
-        BigDecimal currentValue = quantity.multiply(currentPrice).setScale(SCALE_2, RoundingMode.HALF_UP);
+        // For other assets: Calculate market profit using dynamic market prices
+        // Option 2 (Complete): Always use current market prices from asset_prices table
+        // This ensures profit/loss updates automatically when asset_prices.current_price changes
+
+        // Calculate cost basis per unit from original investment
+        BigDecimal costPerUnit = totalInvested.divide(quantity, SCALE_6, RoundingMode.HALF_UP);
+
+        // Get current market price from asset_prices table
+        // This reflects real-time market prices, not the historical buy price
+        BigDecimal currentMarketPrice = getCurrentPriceForAssetType(assetType);
+
+        // Calculate current value based on current market prices
+        // currentValue = quantity × currentMarketPrice
+        BigDecimal currentValue = quantity.multiply(currentMarketPrice).setScale(SCALE_2, RoundingMode.HALF_UP);
+
+        // Calculate market profit/loss based on market price changes
+        // profit = currentValue - totalInvested = (currentMarketPrice - costPerUnit) × quantity
+        // This will be 0 when prices match cost basis, and >0/<0 when market price is higher/lower
         BigDecimal profit = currentValue.subtract(totalInvested).setScale(SCALE_2, RoundingMode.HALF_UP);
         BigDecimal profitRate = calculateProfitRate(profit, totalInvested);
 
@@ -174,8 +188,8 @@ public class GetCurrentUserDashboardService {
             // Build a map of productId -> latest price
             Map<Long, BigDecimal> priceMap = new java.util.HashMap<>();
             for (AssetPriceEntity price : allLatestPrices) {
-                if (productIds.contains(price.getProductId()) && price.getBuyPrice() != null) {
-                    priceMap.put(price.getProductId(), price.getBuyPrice());
+                if (productIds.contains(price.getProductId()) && price.getCurrentPrice() != null) {
+                    priceMap.put(price.getProductId(), price.getCurrentPrice());
                 }
             }
 
@@ -253,6 +267,3 @@ public class GetCurrentUserDashboardService {
         return DashboardResponse.builder().summary(emptySummary).portfolios(new ArrayList<>()).build();
     }
 }
-
-
-

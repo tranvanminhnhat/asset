@@ -15,8 +15,7 @@ import java.time.LocalDateTime;
 public class UpdateAssetPriceRequest {
     private Long id;
     private Long productId;
-    private BigDecimal buyPrice;
-    private BigDecimal sellPrice;
+    private BigDecimal currentPrice;
     private LocalDateTime priceDate;
 }
 

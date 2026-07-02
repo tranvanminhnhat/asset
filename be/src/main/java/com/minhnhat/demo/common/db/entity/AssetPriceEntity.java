@@ -26,11 +26,8 @@ public class AssetPriceEntity {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @Column(name = "buy_price", nullable = false, precision = 19, scale = 6)
-    private BigDecimal buyPrice;
-
-    @Column(name = "sell_price", precision = 19, scale = 6)
-    private BigDecimal sellPrice;
+    @Column(name = "current_price", nullable = false, precision = 19, scale = 6)
+    private BigDecimal currentPrice;
 
     @Column(name = "price_date")
     private LocalDateTime priceDate;

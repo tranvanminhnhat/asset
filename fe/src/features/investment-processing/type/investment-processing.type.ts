@@ -1,5 +1,15 @@
 // Investment Processing Types
 
+export interface ProductWithPriceApiItem {
+  productId: number;
+  assetCode: string;
+  assetType: string;
+  assetName: string;
+  platformName: string;
+  currentPrice?: number;
+  current_price?: number;
+}
+
 // Matches BE: investment.dto.response.ProductWithPriceResponse
 export interface ProductWithPrice {
   productId: number;
@@ -7,8 +17,7 @@ export interface ProductWithPrice {
   assetType: string;
   assetName: string;
   platformName: string;
-  buyPrice: number;
-  sellPrice: number;
+  currentPrice: number;
 }
 
 export interface ProductsApiResponse {
@@ -29,8 +38,7 @@ export interface AssetPrice {
   // New fields
   id: number;
   productId: number;
-  buyPrice: number;
-  sellPrice: number;
+  currentPrice: number;
   priceDate: string | null;
   isLatest: boolean;
   isActive: boolean;
@@ -59,6 +67,7 @@ export interface SelectAssetResponse {
   assetName: string;
   quantity: number;
   buyPrice: number;
+  currentPrice: number;
   investedAmount: number;
   residualAmount: number;
   createdAt: string;

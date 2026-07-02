@@ -2,6 +2,7 @@ import { baseApi } from '@/store/api/baseApi';
 import {
   AssetsApiResponse,
   CompleteAllocationApiResponse,
+  ProductWithPriceApiItem,
   ProductsApiResponse,
   SelectAssetApiResponse,
   SelectAssetRequest,
@@ -13,6 +14,17 @@ export const investmentProcessingApi = baseApi.injectEndpoints({
       query: (type) => ({
         url: `/api/v1/products?type=${type}`,
         method: 'GET',
+      }),
+      transformResponse: (response: { data: ProductWithPriceApiItem[]; message?: ProductsApiResponse['message'] }) => ({
+        data: (response.data ?? []).map((item) => ({
+          productId: item.productId,
+          assetCode: item.assetCode,
+          assetType: item.assetType,
+          assetName: item.assetName,
+          platformName: item.platformName,
+          currentPrice: item.currentPrice ?? item.current_price ?? 0,
+        })),
+        message: response.message,
       }),
     }),
     getAvailableAssets: builder.query<AssetsApiResponse, string>({

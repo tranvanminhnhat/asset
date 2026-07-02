@@ -129,8 +129,8 @@ public class GetDashboardByUserIdService {
                 // Note: This is simplified - we'd need to join with category in production
                 // For now, we'll just return the first available price
                 if (product.isPresent()) {
-                    if (price.getBuyPrice() != null && price.getBuyPrice().compareTo(maxPrice) > 0) {
-                        maxPrice = price.getBuyPrice();
+                    if (price.getCurrentPrice() != null && price.getCurrentPrice().compareTo(maxPrice) > 0) {
+                        maxPrice = price.getCurrentPrice();
                     }
                 }
             }

@@ -14,19 +14,19 @@ const DashboardSummaryComponent: React.FC<DashboardSummaryProps> = ({ summary })
         <div className="text-center">
           <p className="text-sm text-slate-600 mb-2">Giá trị hiện tại</p>
           <p className="text-xl font-bold text-emerald-600">
-            {formatCurrency(summary.totalCurrentValue, summary.currency)}
+            {formatCurrency(summary.totalCurrentValue)}
           </p>
         </div>
         <div className="text-center">
           <p className="text-sm text-slate-600 mb-2">Giá trị mua</p>
           <p className="text-xl font-bold text-slate-800">
-            {formatCurrency(summary.totalPurchaseValue, summary.currency)}
+            {formatCurrency(summary.totalPurchaseValue)}
           </p>
         </div>
         <div className="text-center">
           <p className="text-sm text-slate-600 mb-2">Lợi nhuận</p>
           <p className={`text-xl font-bold ${summary.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {formatCurrency(summary.totalProfit, summary.currency)}
+            {formatCurrency(summary.totalProfit)}
           </p>
         </div>
         <div className="text-center">

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatCurrency, formatDateTime } from '@/lib/formatters';
+import { formatCurrency, formatDateTime, formatUnitPrice } from '@/lib/formatters';
 import LogoutButton from '@/features/logout/components/LogoutButton';
 import { useInvestmentReview } from '../hooks/useInvestmentReview';
 import { AllocationDetailReview } from '../type/investment-review.type';
@@ -70,7 +70,7 @@ const AssetAllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ 
                   <span className="text-xs text-slate-400 ml-2">{sel.assetName}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-slate-500">x{sel.quantity} @ {formatCurrency(sel.buyPrice)}</span>
+                  <span className="text-xs text-slate-500">x{sel.quantity} @ {formatUnitPrice(sel.currentPrice)}</span>
                   <span className="text-xs font-semibold text-slate-900 ml-2">{formatCurrency(sel.investedAmount)}</span>
                 </div>
               </div>
