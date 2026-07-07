@@ -7,9 +7,11 @@ import { loginSchema, type LoginForm } from '../validation/login.schema';
 import { useLogin } from '../hooks/useLogin';
 import Input from '@/common/components/ui/Input';
 import Button from '@/common/components/ui/Button';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 const LoginForm: React.FC = () => {
   const router = useRouter();
+  const { pick } = useI18n();
   const { handleLogin, isLoading, isError, isSuccess } = useLogin();
 
   useEffect(() => {
@@ -39,16 +41,16 @@ const LoginForm: React.FC = () => {
             <path d="M2 10a8 8 0 1116 0A8 8 0 012 10zm6.293-4.707a1 1 0 011.414 0L14 9.586l-1.414 1.414L11 9.414V14a1 1 0 11-2 0V9.414l-1.586 1.586L5.999 9.586l2.294-4.293z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Đăng nhập</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{pick({ vi: 'Dang nhap', en: 'Sign in', ja: 'ログイン' })}</h1>
         <p className="mt-1.5 text-sm text-slate-500">
-          Chào mừng trở lại MoneyPilot
+          {pick({ vi: 'Chao mung tro lai MoneyPilot', en: 'Welcome back to MoneyPilot', ja: 'MoneyPilotへようこそ' })}
         </p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-7">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
-            label="Địa chỉ Email"
+            label={pick({ vi: 'Dia chi Email', en: 'Email address', ja: 'メールアドレス' })}
             id="email"
             type="email"
             {...register('email')}
@@ -57,7 +59,7 @@ const LoginForm: React.FC = () => {
           />
 
           <Input
-            label="Mật khẩu"
+            label={pick({ vi: 'Mat khau', en: 'Password', ja: 'パスワード' })}
             id="password"
             type="password"
             {...register('password')}
@@ -72,26 +74,28 @@ const LoginForm: React.FC = () => {
             loading={isLoading}
             className="w-full mt-1"
           >
-            {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {isLoading
+              ? pick({ vi: 'Dang dang nhap...', en: 'Signing in...', ja: 'ログイン中...' })
+              : pick({ vi: 'Dang nhap', en: 'Sign in', ja: 'ログイン' })}
           </Button>
 
           {isError && (
             <p className="text-center text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg py-2.5">
-              Email hoặc mật khẩu không chính xác. Vui lòng thử lại.
+              {pick({ vi: 'Email hoac mat khau khong chinh xac. Vui long thu lai.', en: 'Incorrect email or password. Please try again.', ja: 'メールアドレスまたはパスワードが正しくありません。再試行してください。' })}
             </p>
           )}
           {isSuccess && (
             <p className="text-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg py-2.5">
-              Đăng nhập thành công! Đang chuyển hướng...
+              {pick({ vi: 'Dang nhap thanh cong! Dang chuyen huong...', en: 'Login successful! Redirecting...', ja: 'ログインに成功しました。リダイレクト中...' })}
             </p>
           )}
         </form>
 
         <div className="mt-5 pt-5 border-t border-slate-100 text-center">
           <p className="text-sm text-slate-500">
-            Chưa có tài khoản?{' '}
+            {pick({ vi: 'Chua co tai khoan?', en: "Don't have an account?", ja: 'アカウントをお持ちでないですか？' })}{' '}
             <Link href="/register" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
-              Đăng ký ngay
+              {pick({ vi: 'Dang ky ngay', en: 'Create one', ja: '新規登録' })}
             </Link>
           </p>
         </div>

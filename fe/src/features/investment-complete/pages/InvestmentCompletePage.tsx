@@ -3,22 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
-import LogoutButton from '@/features/logout/components/LogoutButton';
 import { FinalizeSessionResponse } from '../services/finalize-session.api';
 import { SessionDetailReview } from '@/features/investment-review/type/investment-review.type';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 const STORAGE_KEY = 'investmentFinalizeResult';
 const SESSION_DETAIL_KEY = 'investmentSessionDetail';
 
-const typeNames: Record<string, string> = {
-  EMERGENCY: 'Quỹ Khẩn cấp',
-  GOLD: 'Quỹ Vàng',
-  ETF: 'Quỹ ETF',
-  STOCK: 'Cổ Phiếu',
-};
-
 const InvestmentCompletePage: React.FC = () => {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const [data, setData] = useState<FinalizeSessionResponse | null>(null);
   const [sessionDetail, setSessionDetail] = useState<SessionDetailReview | null>(null);
 
@@ -49,13 +43,13 @@ const InvestmentCompletePage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 mb-2">Không tìm thấy dữ liệu</h1>
-          <p className="text-sm text-slate-500 mb-6">Vui lòng quay lại trang xem lại và thực hiện xác nhận.</p>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">{t('complete.noDataTitle')}</h1>
+          <p className="text-sm text-slate-500 mb-6">{t('complete.noDataSubtitle')}</p>
           <button
             onClick={() => router.push('/investment-review')}
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
-            Quay lại xem lại
+            {t('complete.backToReview')}
           </button>
         </div>
       </div>
@@ -70,10 +64,10 @@ const InvestmentCompletePage: React.FC = () => {
 
   const summaryItems = [
     ...nonEmergencyAllocations.map((a) => ({
-      label: typeNames[a.assetType] ?? a.assetType,
+      label: t(`assettype.${a.assetType.toLowerCase()}`, { fallback: a.assetType }),
       amount: Number(a.investedAmount ?? 0),
     })),
-    ...(emergencyAllocation ? [{ label: typeNames['EMERGENCY'], amount: emergencyTotal }] : []),
+    ...(emergencyAllocation ? [{ label: t('assettype.emergency'), amount: emergencyTotal }] : []),
   ];
 
   return (
@@ -86,15 +80,15 @@ const InvestmentCompletePage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Đầu tư hoàn thành!</h1>
-          <p className="text-sm text-slate-500 mt-1">Phiên #{data.sessionId} · {formatDateTime(data.completedAt)}</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('complete.successTitle')}</h1>
+          <p className="text-sm text-slate-500 mt-1">#{data.sessionId} · {formatDateTime(data.completedAt, locale)}</p>
         </div>
 
         {/* Summary card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4">
           <div className="bg-emerald-600 px-5 py-4">
-            <p className="text-xs text-white/70 mb-0.5">Tổng số tiền đã đầu tư</p>
-            <p className="text-3xl font-bold text-white">{formatCurrency(data.totalInvested)}</p>
+            <p className="text-xs text-white/70 mb-0.5">{t('complete.totalInvested')}</p>
+            <p className="text-3xl font-bold text-white">{formatCurrency(data.totalInvested, 'VND', locale)}</p>
           </div>
 
           {summaryItems.length > 0 && (
@@ -102,7 +96,7 @@ const InvestmentCompletePage: React.FC = () => {
               {summaryItems.map(({ label, amount }) => (
                 <div key={label} className="flex items-center justify-between px-5 py-3.5">
                   <span className="text-sm text-slate-600">{label}</span>
-                  <span className="text-sm font-semibold text-slate-900">{formatCurrency(amount)}</span>
+                  <span className="text-sm font-semibold text-slate-900">{formatCurrency(amount, 'VND', locale)}</span>
                 </div>
               ))}
             </div>
@@ -110,8 +104,8 @@ const InvestmentCompletePage: React.FC = () => {
 
           {data.totalResidual > 0 && (
             <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-t border-slate-100">
-              <span className="text-xs text-slate-500">Tiền dư hoàn về</span>
-              <span className="text-xs font-semibold text-rose-600">− {formatCurrency(data.totalResidual)}</span>
+              <span className="text-xs text-slate-500">{t('complete.residualRefund')}</span>
+              <span className="text-xs font-semibold text-rose-600">− {formatCurrency(data.totalResidual, 'VND', locale)}</span>
             </div>
           )}
         </div>
@@ -121,7 +115,7 @@ const InvestmentCompletePage: React.FC = () => {
           onClick={handleGoToDashboard}
           className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition"
         >
-          Về Dashboard
+          {t('complete.goDashboard')}
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>

@@ -1,8 +1,11 @@
 'use client';
 import React from 'react';
 import RegisterForm from '../components/RegisterForm';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 const RegisterPage: React.FC = () => {
+  const { pick } = useI18n();
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Left branding panel */}
@@ -19,17 +22,22 @@ const RegisterPage: React.FC = () => {
             <span className="text-white font-bold text-lg tracking-tight">MoneyPilot</span>
           </div>
           <h2 className="text-3xl font-bold text-white mb-4 leading-snug">
-            Bắt đầu hành trình<br />đầu tư của bạn
+            {pick({ vi: 'Bat dau hanh trinh', en: 'Start your', ja: 'あなたの' })}<br />
+            {pick({ vi: 'dau tu cua ban', en: 'investment journey', ja: '投資の旅を始めましょう' })}
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Đăng ký miễn phí và trải nghiệm nền tảng quản lý danh mục đầu tư thông minh, đơn giản, hiệu quả.
+            {pick({
+              vi: 'Dang ky mien phi va trai nghiem nen tang quan ly danh muc dau tu thong minh, don gian, hieu qua.',
+              en: 'Sign up for free and experience a smart, simple, and effective portfolio management platform.',
+              ja: '無料で登録して、スマートでシンプルかつ効果的なポートフォリオ管理を体験しましょう。',
+            })}
           </p>
           <ul className="mt-8 space-y-3">
             {[
-              'Quản lý nhiều loại tài sản',
-              'Phân tích hiệu suất real-time',
-              'Gợi ý danh mục từ AI',
-              'Bảo mật tuyệt đối',
+              pick({ vi: 'Quan ly nhieu loai tai san', en: 'Manage multiple asset classes', ja: '複数の資産クラスを管理' }),
+              pick({ vi: 'Phan tich hieu suat real-time', en: 'Real-time performance analysis', ja: 'リアルタイムのパフォーマンス分析' }),
+              pick({ vi: 'Goi y danh muc tu AI', en: 'AI portfolio recommendations', ja: 'AIによるポートフォリオ提案' }),
+              pick({ vi: 'Bao mat tuyet doi', en: 'Strong security', ja: '高いセキュリティ' }),
             ].map((item) => (
               <li key={item} className="flex items-center gap-3 text-sm text-slate-300">
                 <span className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">

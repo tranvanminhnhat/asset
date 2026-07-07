@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { formatCurrency, formatPercentage } from '@/lib/formatters';
 import { DashboardPortfolioItem } from '../type/dashboard.type';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 interface PortfolioCardProps {
   portfolio: DashboardPortfolioItem;
@@ -50,6 +51,7 @@ const assetConfig: Record<string, { label: string; color: string; bg: string; ic
 };
 
 const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
+  const { pick, locale } = useI18n();
   const cfg = assetConfig[portfolio.assetType] ?? {
     label: portfolio.assetType,
     color: 'text-slate-700',
@@ -71,7 +73,11 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
           {cfg.icon}
         </div>
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-slate-900 truncate">{cfg.label}</h3>
+          <h3 className="text-sm font-semibold text-slate-900 truncate">{pick({
+            vi: cfg.label,
+            en: portfolio.assetType === 'EMERGENCY' ? 'Emergency Fund' : portfolio.assetType === 'STOCK' ? 'Stock' : portfolio.assetType === 'GOLD' ? 'Gold' : portfolio.assetType === 'ETF' ? 'ETF Fund' : cfg.label,
+            ja: portfolio.assetType === 'EMERGENCY' ? '緊急資金' : portfolio.assetType === 'STOCK' ? '株式' : portfolio.assetType === 'GOLD' ? 'ゴールド' : portfolio.assetType === 'ETF' ? 'ETFファンド' : cfg.label,
+          })}</h3>
           <p className="text-xs text-slate-500 font-mono">{portfolio.assetType}</p>
         </div>
         <span
@@ -87,16 +93,16 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
       {/* Metrics */}
       <div className="space-y-2.5">
         <div className="flex justify-between text-xs">
-          <span className="text-slate-500">Số lượng</span>
+          <span className="text-slate-500">{pick({ vi: 'So luong', en: 'Quantity', ja: '数量' })}</span>
           <span className="font-semibold text-slate-900">{portfolio.quantity}</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-slate-500">Vốn đầu tư</span>
-          <span className="font-semibold text-slate-900">{formatCurrency(portfolio.investedCost)}</span>
+          <span className="text-slate-500">{pick({ vi: 'Von dau tu', en: 'Invested', ja: '投資額' })}</span>
+          <span className="font-semibold text-slate-900">{formatCurrency(portfolio.investedCost, 'VND', locale)}</span>
         </div>
         <div className="flex justify-between text-xs">
-          <span className="text-slate-500">Giá trị hiện tại</span>
-          <span className="font-semibold text-slate-900">{formatCurrency(portfolio.currentValue)}</span>
+          <span className="text-slate-500">{pick({ vi: 'Gia tri hien tai', en: 'Current value', ja: '現在価値' })}</span>
+          <span className="font-semibold text-slate-900">{formatCurrency(portfolio.currentValue, 'VND', locale)}</span>
         </div>
       </div>
 
@@ -105,9 +111,9 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ portfolio }) => {
 
       {/* PnL */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-slate-500">Lợi nhuận (PnL)</span>
+        <span className="text-xs text-slate-500">{pick({ vi: 'Loi nhuan (PnL)', en: 'Profit (PnL)', ja: '損益 (PnL)' })}</span>
         <span className={`text-sm font-bold ${isProfit ? 'text-emerald-600' : 'text-red-600'}`}>
-          {isProfit ? '+' : ''}{formatCurrency(portfolio.profit)}
+          {isProfit ? '+' : ''}{formatCurrency(portfolio.profit, 'VND', locale)}
         </span>
       </div>
     </div>

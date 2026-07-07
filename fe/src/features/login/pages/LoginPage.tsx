@@ -1,8 +1,11 @@
 'use client';
 import React from 'react';
 import LoginForm from '../components/LoginForm';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 const LoginPage: React.FC = () => {
+  const { pick } = useI18n();
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Left branding panel */}
@@ -20,17 +23,34 @@ const LoginPage: React.FC = () => {
             <span className="text-white font-bold text-lg tracking-tight">MoneyPilot</span>
           </div>
           <h2 className="text-3xl font-bold text-white mb-4 leading-snug">
-            Quản lý tài chính<br />thông minh hơn
+            {pick({ vi: 'Quan ly tai chinh', en: 'Manage finances', ja: '資産を管理' })}<br />
+            {pick({ vi: 'thong minh hon', en: 'more intelligently', ja: 'よりスマートに' })}
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Theo dõi danh mục, phân tích hiệu suất và đưa ra quyết định đầu tư chính xác với nền tảng dữ liệu thực.
+            {pick({
+              vi: 'Theo doi danh muc, phan tich hieu suat va dua ra quyet dinh dau tu chinh xac voi nen tang du lieu thuc.',
+              en: 'Track portfolios, analyze performance, and make better investment decisions with reliable data.',
+              ja: 'ポートフォリオの追跡、パフォーマンス分析、信頼できるデータに基づく投資判断を支援します。',
+            })}
           </p>
           <div className="mt-8 grid grid-cols-2 gap-4">
             {[
-              { label: 'Danh mục', value: '4 loại tài sản' },
-              { label: 'Bảo mật', value: 'JWT + Middleware' },
-              { label: 'Giao dịch', value: 'Real-time' },
-              { label: 'Báo cáo', value: 'Chi tiết' },
+              {
+                label: pick({ vi: 'Danh muc', en: 'Portfolios', ja: 'ポートフォリオ' }),
+                value: pick({ vi: '4 loai tai san', en: '4 asset classes', ja: '4つの資産クラス' }),
+              },
+              {
+                label: pick({ vi: 'Bao mat', en: 'Security', ja: 'セキュリティ' }),
+                value: 'JWT + Middleware',
+              },
+              {
+                label: pick({ vi: 'Giao dich', en: 'Transactions', ja: '取引' }),
+                value: 'Real-time',
+              },
+              {
+                label: pick({ vi: 'Bao cao', en: 'Reports', ja: 'レポート' }),
+                value: pick({ vi: 'Chi tiet', en: 'Detailed', ja: '詳細' }),
+              },
             ].map((item) => (
               <div key={item.label} className="rounded-xl bg-white/5 border border-white/10 p-4">
                 <p className="text-xs text-slate-400 mb-1">{item.label}</p>
