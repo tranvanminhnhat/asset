@@ -1,0 +1,123 @@
+spring:
+  application:
+    name: asset
+
+  # Database Configuration
+  # Using MySQL (same as production)
+  # For local MySQL: update username, password, and url as needed
+  datasource:
+    url: jdbc:mysql://viaduct.proxy.rlwy.net:36228/asset_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:MQTRfyRKCFZdhGrMpAbKXJNebafyHFLw}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update  # Update schema without dropping tables (safe for MySQL)
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+    database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+
+  # Task Scheduling Configuration
+  task:
+    scheduling:
+      pool:
+        size: 5
+      thread-name-prefix: asset-scheduler-
+
+  # Email Configuration (Gmail SMTP)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tranvanminhnhat99@gmail.com  # Change to your Gmail
+    password: 'xsxw nqab vesg hzfp'       # Change to your App Password
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  # Message Internationalization
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.vn.asset: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Application Configuration
+app:
+  # Frontend URLs
+  frontend:
+    login-url: http://localhost:3000/login
+    home-url: http://localhost:3000/home
+
+  # API Endpoints Configuration
+  api:
+    # FireAnt API (Swagger-defined endpoints)
+    fireant:
+      base-url: https://api.fireant.vn
+      auth:
+        anonymous-login-endpoint: /authentication/anonymous-login
+      symbol-endpoint: /symbols/{symbol}
+      historical-quotes-endpoint: /symbols/{symbol}/historical-quotes
+      quote-lookback-days: 7
+      timeout-ms: 10000
+      retry-count: 3
+
+    # SJC Gold Prices
+    sjc:
+      base-url: https://sjc.com.vn
+      price-url: https://sjc.com.vn/GoldPrice/Services/PriceService.ashx
+      timeout-ms: 15000
+      user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+
+    # Other Potential Sources
+    vietcom-bank:
+      base-url: https://www.vietcombank.com.vn
+      gold-price-endpoint: /Rates
+
+    sse:
+      base-url: https://www.sse.com.vn
+      quote-endpoint: /api/quote/{symbol}
+
+# Asset Data Configuration
+asset:
+  fireant:
+    # Stock Codes to fetch
+    stock-codes: TCB,FPT,VCB,BAA,BID,VNI,VIC,HDB,ACB,MBB,CTG,VIB,STB,CEO,BCS
+
+    # ETF Codes to fetch
+    etf-codes: E1VFVN30,FUEVFVND,VFIBL,VFVNDPX,VFEVFVND,VVNF,VESAF
+
+  # Schedule Configuration
+  schedule:
+    # Daily sync at 17:00 (0 0 17 * * *)
+    daily-sync-cron: "0 0 17 * * *"
+
+    # Intraday sync every 15 minutes during trading hours (0 */15 8-15 * * MON-FRI)
+    intraday-sync-cron: "0 */15 8-15 * * MON-FRI"
+
+    # Gold price sync every hour (0 0 * * * *)
+    gold-sync-cron: "0 0 * * * *"
+
+    # Timezone for schedules
+    timezone: Asia/Ho_Chi_Minh

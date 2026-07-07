@@ -120,6 +120,15 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['AllocationMaster', 'AssetPrice', 'AssetProduct', 'AssetCategory', 'AssetPlatform', 'SessionDetail'],
+  tagTypes: [
+    'AllocationMaster',
+    'AssetPrice',
+    'AssetProduct',
+    'AssetCategory',
+    'AssetPlatform',
+    'SessionDetail',
+    'ProfileSettings',
+    'Notifications',
+  ],
   endpoints: () => ({}),
 });

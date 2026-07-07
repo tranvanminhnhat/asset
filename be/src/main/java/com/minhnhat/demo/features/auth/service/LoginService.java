@@ -65,7 +65,7 @@ public class LoginService {
         prepare(ctx);
         execute(ctx);
         persist(ctx);
-        afterProcess(ctx);
+        afterProcess();
     }
 
     private void validateBusiness(Context ctx) {
@@ -101,7 +101,7 @@ public class LoginService {
         }
     }
 
-    private void afterProcess(Context ctx) {
+    private void afterProcess() {
         // no-op
     }
 
@@ -109,7 +109,13 @@ public class LoginService {
         return LoginResponse.builder()
                 .userId(ctx.userEntity.getUserId())
                 .email(ctx.userEntity.getEmail())
+                .fullName(ctx.userEntity.getFullName())
+                .avatarUrl(ctx.userEntity.getAvatarUrl())
                 .status(ctx.userEntity.getStatus())
+                .autoInvestEnabled(ctx.userEntity.getAutoInvestEnabled())
+                .investmentStyle(ctx.userEntity.getInvestmentStyle())
+                .autoInvestDayOfMonth(ctx.userEntity.getAutoInvestDayOfMonth())
+                .flowMode(Boolean.TRUE.equals(ctx.userEntity.getAutoInvestEnabled()) ? "AUTO" : "MANUAL")
                 .accessToken(ctx.accessToken)
                 .refreshToken(ctx.refreshToken)
                 .build();

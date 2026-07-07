@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface AssetProductRepository extends JpaRepository<AssetProductEntity, Long> {
     Optional<AssetProductEntity> findByCode(String code);
     List<AssetProductEntity> findByCategoryIdAndPlatformId(Integer categoryId, Long platformId);
+    List<AssetProductEntity> findByCategoryIdAndIsActiveTrue(Integer categoryId);
     List<AssetProductEntity> findByIsActiveTrueOrderByName();
     List<AssetProductEntity> findAllByIsActive(Boolean isActive);
     Optional<AssetProductEntity> findByIdAndIsActiveTrue(Long id);

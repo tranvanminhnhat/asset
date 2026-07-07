@@ -3,9 +3,11 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LogoutButton from '@/features/logout/components/LogoutButton';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 const HeroBanner: React.FC = () => {
   const router = useRouter();
+  const { pick } = useI18n();
 
   return (
     <div className="relative rounded-2xl overflow-hidden bg-slate-900 mb-8 shadow-xl">
@@ -37,20 +39,21 @@ const HeroBanner: React.FC = () => {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex-1">
             <p className="text-emerald-400 text-xs font-semibold uppercase tracking-widest mb-2">
-              Nền tảng quản lý tài sản
+              {pick({ vi: 'Nen tang quan ly tai san', en: 'Asset management platform', ja: '資産管理プラットフォーム' })}
             </p>
             <h1 className="text-3xl font-bold text-white leading-tight tracking-tight mb-3">
-              Nâng tầm danh mục đầu tư<br className="hidden md:block" /> của bạn
+              {pick({ vi: 'Nang tam danh muc dau tu', en: 'Elevate your portfolio', ja: 'ポートフォリオを強化' })}
+              <br className="hidden md:block" /> {pick({ vi: 'cua ban', en: 'today', ja: 'しましょう' })}
             </h1>
             <p className="text-slate-400 text-sm leading-relaxed max-w-md">
-              Theo dõi hiệu suất, tối ưu phân bổ và tăng trưởng tài sản trên một nền tảng chuyên nghiệp.
+              {pick({ vi: 'Theo doi hieu suat, toi uu phan bo va tang truong tai san tren mot nen tang chuyen nghiep.', en: 'Track performance, optimize allocations, and grow your assets on one professional platform.', ja: 'パフォーマンス追跡、配分最適化、資産成長を1つのプラットフォームで実現します。' })}
             </p>
             <div className="mt-5 flex items-center gap-3">
               <button
                 onClick={() => router.push('/investment-amount')}
                 className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40"
               >
-                Đầu tư ngay
+                {pick({ vi: 'Dau tu ngay', en: 'Invest now', ja: '今すぐ投資' })}
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -59,7 +62,7 @@ const HeroBanner: React.FC = () => {
                 href="/investment-plans"
                 className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 border border-white/20"
               >
-                Kế hoạch của tôi
+                {pick({ vi: 'Ke hoach cua toi', en: 'My plans', ja: 'マイプラン' })}
               </Link>
             </div>
           </div>

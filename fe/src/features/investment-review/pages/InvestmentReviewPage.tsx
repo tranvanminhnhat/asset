@@ -6,15 +6,16 @@ import LogoutButton from '@/features/logout/components/LogoutButton';
 import { useInvestmentReview } from '../hooks/useInvestmentReview';
 import { AllocationDetailReview } from '../type/investment-review.type';
 import { useFinalizeSessionMutation, FinalizeAllocationItem } from '@/features/investment-complete/services/finalize-session.api';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 const FINALIZE_STORAGE_KEY = 'investmentFinalizeResult';
 const SESSION_DETAIL_STORAGE_KEY = 'investmentSessionDetail';
 
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  NOT_STARTED: { label: 'Chưa xử lý', color: 'text-slate-600', bg: 'bg-slate-100' },
-  IN_PROGRESS: { label: 'Đang xử lý', color: 'text-amber-700', bg: 'bg-amber-50' },
-  COMPLETED: { label: 'Hoàn thành', color: 'text-emerald-700', bg: 'bg-emerald-50' },
-  LOCKED: { label: 'Khóa', color: 'text-slate-400', bg: 'bg-slate-50' },
+const statusConfig: Record<string, { key: string; color: string; bg: string }> = {
+  NOT_STARTED: { key: 'NOT_STARTED', color: 'text-slate-600', bg: 'bg-slate-100' },
+  IN_PROGRESS: { key: 'IN_PROGRESS', color: 'text-amber-700', bg: 'bg-amber-50' },
+  COMPLETED: { key: 'COMPLETED', color: 'text-emerald-700', bg: 'bg-emerald-50' },
+  LOCKED: { key: 'LOCKED', color: 'text-slate-400', bg: 'bg-slate-50' },
 };
 
 const typeNames: Record<string, string> = {
@@ -25,8 +26,14 @@ const typeNames: Record<string, string> = {
 };
 
 // Non-emergency allocation row: shows invested + residual (residual goes to emergency fund)
-const AssetAllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ allocation }) => {
+const AssetAllocationRow: React.FC<{ allocation: AllocationDetailReview; locale: string; pick: (values: { vi: string; en: string; ja: string }) => string }> = ({ allocation, locale, pick }) => {
   const sts = statusConfig[allocation.status] ?? statusConfig.NOT_STARTED;
+  const statusLabel = {
+    NOT_STARTED: pick({ vi: 'Chua xu ly', en: 'Not started', ja: '未処理' }),
+    IN_PROGRESS: pick({ vi: 'Dang xu ly', en: 'In progress', ja: '処理中' }),
+    COMPLETED: pick({ vi: 'Hoan thanh', en: 'Completed', ja: '完了' }),
+    LOCKED: pick({ vi: 'Khoa', en: 'Locked', ja: 'ロック' }),
+  }[sts.key] ?? sts.key;
   const percentDisplay = Number(allocation.percentage).toFixed(1);
   const residual = Number(allocation.residualAmount ?? 0);
 
@@ -40,28 +47,28 @@ const AssetAllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ 
           <span className="text-xs text-slate-400">({percentDisplay}%)</span>
         </div>
         <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${sts.color} ${sts.bg}`}>
-          {sts.label}
+          {statusLabel}
         </span>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-3">
         <div className="bg-slate-50 rounded-lg p-3">
-          <p className="text-xs text-slate-500 mb-0.5">Đề xuất</p>
-          <p className="text-sm font-semibold text-slate-900">{formatCurrency(allocation.recommendedAmount)}</p>
+          <p className="text-xs text-slate-500 mb-0.5">{pick({ vi: 'De xuat', en: 'Recommended', ja: '提案額' })}</p>
+          <p className="text-sm font-semibold text-slate-900">{formatCurrency(allocation.recommendedAmount, 'VND', locale)}</p>
         </div>
         <div className="bg-emerald-50 rounded-lg p-3">
-          <p className="text-xs text-slate-500 mb-0.5">Đã đầu tư</p>
-          <p className="text-sm font-semibold text-emerald-700">{formatCurrency(allocation.investedAmount)}</p>
+          <p className="text-xs text-slate-500 mb-0.5">{pick({ vi: 'Da dau tu', en: 'Invested', ja: '投資済み' })}</p>
+          <p className="text-sm font-semibold text-emerald-700">{formatCurrency(allocation.investedAmount, 'VND', locale)}</p>
         </div>
         <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
-          <p className="text-xs text-amber-700 mb-0.5 font-medium">Dư → Quỹ KCấp</p>
-          <p className="text-sm font-semibold text-amber-700">{formatCurrency(residual)}</p>
+          <p className="text-xs text-amber-700 mb-0.5 font-medium">{pick({ vi: 'Du -> Quy khan cap', en: 'Residual -> Emergency', ja: '残額 -> 緊急資金' })}</p>
+          <p className="text-sm font-semibold text-amber-700">{formatCurrency(residual, 'VND', locale)}</p>
         </div>
       </div>
 
       {allocation.selections && allocation.selections.length > 0 && (
         <div className="border-t border-slate-100 pt-3">
-          <p className="text-xs text-slate-500 font-medium mb-2">Tài sản đã chọn</p>
+          <p className="text-xs text-slate-500 font-medium mb-2">{pick({ vi: 'Tai san da chon', en: 'Selected assets', ja: '選択済み資産' })}</p>
           <div className="space-y-1.5">
             {allocation.selections.map((sel) => (
               <div key={sel.selectionId} className="flex items-center justify-between">
@@ -70,8 +77,8 @@ const AssetAllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ 
                   <span className="text-xs text-slate-400 ml-2">{sel.assetName}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-slate-500">x{sel.quantity} @ {formatUnitPrice(sel.currentPrice)}</span>
-                  <span className="text-xs font-semibold text-slate-900 ml-2">{formatCurrency(sel.investedAmount)}</span>
+                  <span className="text-xs text-slate-500">x{sel.quantity} @ {formatUnitPrice(sel.currentPrice, locale)}</span>
+                  <span className="text-xs font-semibold text-slate-900 ml-2">{formatCurrency(sel.investedAmount, 'VND', locale)}</span>
                 </div>
               </div>
             ))}
@@ -86,9 +93,11 @@ const AssetAllocationRow: React.FC<{ allocation: AllocationDetailReview }> = ({ 
 interface EmergencyCardProps {
   allocation: AllocationDetailReview;
   otherResiduals: { assetType: string; residual: number }[];
+  locale: string;
+  pick: (values: { vi: string; en: string; ja: string }) => string;
 }
 
-const EmergencyFundCard: React.FC<EmergencyCardProps> = ({ allocation, otherResiduals }) => {
+const EmergencyFundCard: React.FC<EmergencyCardProps> = ({ allocation, otherResiduals, locale, pick }) => {
   const percentDisplay = Number(allocation.percentage).toFixed(1);
   const emergencyBase = Number(allocation.recommendedAmount ?? 0);
   const totalResidualFromOthers = otherResiduals.reduce((s, r) => s + r.residual, 0);
@@ -104,13 +113,13 @@ const EmergencyFundCard: React.FC<EmergencyCardProps> = ({ allocation, otherResi
             </svg>
           </div>
           <div>
-            <h4 className="text-sm font-bold text-amber-900">Quỹ Khẩn Cấp</h4>
-            <span className="text-xs text-amber-600">({percentDisplay}% ban đầu)</span>
+            <h4 className="text-sm font-bold text-amber-900">{pick({ vi: 'Quy khan cap', en: 'Emergency Fund', ja: '緊急資金' })}</h4>
+            <span className="text-xs text-amber-600">({percentDisplay}% {pick({ vi: 'ban dau', en: 'base', ja: '初期' })})</span>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-amber-600 mb-0.5">Tổng quỹ khẩn cấp</p>
-          <p className="text-lg font-bold text-amber-800">{formatCurrency(totalEmergency)}</p>
+          <p className="text-xs text-amber-600 mb-0.5">{pick({ vi: 'Tong quy khan cap', en: 'Total emergency fund', ja: '緊急資金合計' })}</p>
+          <p className="text-lg font-bold text-amber-800">{formatCurrency(totalEmergency, 'VND', locale)}</p>
         </div>
       </div>
 
@@ -120,9 +129,9 @@ const EmergencyFundCard: React.FC<EmergencyCardProps> = ({ allocation, otherResi
         <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-amber-100">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
-            <span className="text-xs text-slate-600">Quỹ khẩn cấp ban đầu</span>
+            <span className="text-xs text-slate-600">{pick({ vi: 'Quy khan cap ban dau', en: 'Base emergency amount', ja: '初期緊急資金' })}</span>
           </div>
-          <span className="text-xs font-semibold text-slate-900">{formatCurrency(emergencyBase)}</span>
+          <span className="text-xs font-semibold text-slate-900">{formatCurrency(emergencyBase, 'VND', locale)}</span>
         </div>
 
         {/* Residuals from other assets */}
@@ -131,17 +140,17 @@ const EmergencyFundCard: React.FC<EmergencyCardProps> = ({ allocation, otherResi
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-300 flex-shrink-0" />
               <span className="text-xs text-slate-600">
-                Phần dư từ {typeNames[r.assetType] ?? r.assetType}
+                {pick({ vi: 'Phan du tu', en: 'Residual from', ja: '残額元:' })} {typeNames[r.assetType] ?? r.assetType}
               </span>
             </div>
-            <span className="text-xs font-semibold text-rose-600">+ {formatCurrency(r.residual)}</span>
+            <span className="text-xs font-semibold text-rose-600">+ {formatCurrency(r.residual, 'VND', locale)}</span>
           </div>
         ))}
 
         {/* Total line */}
         <div className="flex items-center justify-between bg-amber-100 rounded-lg px-3 py-2.5 border border-amber-200 mt-1">
-          <span className="text-xs font-bold text-amber-900">Tổng cộng</span>
-          <span className="text-sm font-bold text-amber-900">{formatCurrency(totalEmergency)}</span>
+          <span className="text-xs font-bold text-amber-900">{pick({ vi: 'Tong cong', en: 'Total', ja: '合計' })}</span>
+          <span className="text-sm font-bold text-amber-900">{formatCurrency(totalEmergency, 'VND', locale)}</span>
         </div>
       </div>
     </div>
@@ -150,6 +159,7 @@ const EmergencyFundCard: React.FC<EmergencyCardProps> = ({ allocation, otherResi
 
 const InvestmentReviewPage: React.FC = () => {
   const router = useRouter();
+  const { pick, locale } = useI18n();
   const { sessionId, sessionDetail, isLoading, isError } = useInvestmentReview();
   const [finalizeSession, { isLoading: isFinalizing }] = useFinalizeSessionMutation();
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
@@ -162,7 +172,7 @@ const InvestmentReviewPage: React.FC = () => {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          <p className="text-sm text-slate-500">Đang tải dữ liệu...</p>
+          <p className="text-sm text-slate-500">{pick({ vi: 'Dang tai du lieu...', en: 'Loading data...', ja: 'データ読み込み中...' })}</p>
         </div>
       </div>
     );
@@ -177,13 +187,13 @@ const InvestmentReviewPage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 mb-2">Không tìm thấy phiên đầu tư</h1>
-          <p className="text-sm text-slate-500 mb-6">Vui lòng quay lại đề xuất đầu tư.</p>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">{pick({ vi: 'Khong tim thay phien dau tu', en: 'Investment session not found', ja: '投資セッションが見つかりません' })}</h1>
+          <p className="text-sm text-slate-500 mb-6">{pick({ vi: 'Vui long quay lai de xuat dau tu.', en: 'Please return to recommendations.', ja: '提案画面へ戻ってください。' })}</p>
           <button
             onClick={() => router.push('/investment-recommendations')}
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
-            Quay lại đề xuất
+            {pick({ vi: 'Quay lai de xuat', en: 'Back to recommendations', ja: '提案へ戻る' })}
           </button>
         </div>
       </div>
@@ -227,7 +237,7 @@ const InvestmentReviewPage: React.FC = () => {
       }
       router.push('/investment-complete');
     } catch {
-      setFinalizeError('Không thể hoàn tất phiên đầu tư. Vui lòng thử lại.');
+      setFinalizeError(pick({ vi: 'Khong the hoan tat phien dau tu. Vui long thu lai.', en: 'Unable to finalize session. Please try again.', ja: 'セッションを完了できません。再試行してください。' }));
     }
   };
 
@@ -237,11 +247,11 @@ const InvestmentReviewPage: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Xem lại đầu tư</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{pick({ vi: 'Xem lai dau tu', en: 'Investment review', ja: '投資レビュー' })}</h1>
             <p className="text-sm text-slate-500 mt-1">
-              Chiến lược: <span className="font-semibold text-emerald-700">{sessionDetail.strategyCode}</span>
+              {pick({ vi: 'Chien luoc:', en: 'Strategy:', ja: '戦略:' })} <span className="font-semibold text-emerald-700">{sessionDetail.strategyCode}</span>
               <span className="mx-2 text-slate-300">•</span>
-              Phiên: <span className="font-semibold text-slate-700">#{sessionDetail.sessionId}</span>
+              {pick({ vi: 'Phien:', en: 'Session:', ja: 'セッション:' })} <span className="font-semibold text-slate-700">#{sessionDetail.sessionId}</span>
             </p>
           </div>
           <LogoutButton />
@@ -249,7 +259,12 @@ const InvestmentReviewPage: React.FC = () => {
 
         {/* Steps */}
         <div className="flex items-center gap-2 mb-8">
-          {['Số tiền & Chiến lược', 'Xử lý danh mục', 'Xem lại', 'Hoàn thành'].map((step, i) => (
+          {[
+            pick({ vi: 'So tien & Chien luoc', en: 'Amount & Strategy', ja: '金額と戦略' }),
+            pick({ vi: 'Xu ly danh muc', en: 'Process portfolio', ja: 'ポートフォリオ処理' }),
+            pick({ vi: 'Xem lai', en: 'Review', ja: '確認' }),
+            pick({ vi: 'Hoan thanh', en: 'Complete', ja: '完了' }),
+          ].map((step, i) => (
             <React.Fragment key={step}>
               <div className={`flex items-center gap-2 text-xs font-medium ${i <= 2 ? 'text-emerald-700' : 'text-slate-400'}`}>
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -265,9 +280,9 @@ const InvestmentReviewPage: React.FC = () => {
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           {[
-            { label: 'Tổng số tiền', value: formatCurrency(sessionDetail.totalAmount), cls: 'text-slate-900' },
-            { label: 'Tổng đã đầu tư (trừ khẩn cấp)', value: formatCurrency(totalInvested), cls: 'text-emerald-700' },
-            { label: 'Tổng Quỹ Khẩn Cấp', value: formatCurrency(emergencyTotal), cls: 'text-amber-700' },
+            { label: pick({ vi: 'Tong so tien', en: 'Total amount', ja: '総額' }), value: formatCurrency(sessionDetail.totalAmount, 'VND', locale), cls: 'text-slate-900' },
+            { label: pick({ vi: 'Tong da dau tu (tru khan cap)', en: 'Total invested (excluding emergency)', ja: '総投資額(緊急資金除く)' }), value: formatCurrency(totalInvested, 'VND', locale), cls: 'text-emerald-700' },
+            { label: pick({ vi: 'Tong quy khan cap', en: 'Total emergency fund', ja: '緊急資金合計' }), value: formatCurrency(emergencyTotal, 'VND', locale), cls: 'text-amber-700' },
           ].map(({ label, value, cls }) => (
             <div key={label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
               <p className="text-xs text-slate-500 mb-1">{label}</p>
@@ -279,26 +294,26 @@ const InvestmentReviewPage: React.FC = () => {
         {/* Session info */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 mb-6 flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500">Trạng thái phiên</p>
+            <p className="text-xs text-slate-500">{pick({ vi: 'Trang thai phien', en: 'Session status', ja: 'セッション状態' })}</p>
             <p className="text-sm font-semibold text-slate-900 mt-0.5">{sessionDetail.status}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Ngày tạo</p>
-            <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateTime(sessionDetail.createdAt)}</p>
+            <p className="text-xs text-slate-500">{pick({ vi: 'Ngay tao', en: 'Created at', ja: '作成日時' })}</p>
+            <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateTime(sessionDetail.createdAt, locale)}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Chiến lược</p>
+            <p className="text-xs text-slate-500">{pick({ vi: 'Chien luoc', en: 'Strategy', ja: '戦略' })}</p>
             <p className="text-sm font-semibold text-emerald-700 mt-0.5">{sessionDetail.strategyCode}</p>
           </div>
         </div>
 
         {/* Allocations */}
         <div className="mb-6">
-          <h2 className="text-base font-semibold text-slate-900 mb-4">Chi tiết phân bổ</h2>
+          <h2 className="text-base font-semibold text-slate-900 mb-4">{pick({ vi: 'Chi tiet phan bo', en: 'Allocation details', ja: '配分詳細' })}</h2>
           <div className="space-y-4">
             {/* Non-emergency assets first */}
             {nonEmergencyAllocations.map((allocation) => (
-              <AssetAllocationRow key={allocation.allocationId} allocation={allocation} />
+              <AssetAllocationRow key={allocation.allocationId} allocation={allocation} locale={locale} pick={pick} />
             ))}
 
             {/* Emergency fund card — aggregates all residuals */}
@@ -306,6 +321,8 @@ const InvestmentReviewPage: React.FC = () => {
               <EmergencyFundCard
                 allocation={emergencyAllocation}
                 otherResiduals={otherResiduals}
+                locale={locale}
+                pick={pick}
               />
             )}
           </div>
@@ -323,7 +340,7 @@ const InvestmentReviewPage: React.FC = () => {
               onClick={() => router.push('/investment-recommendations')}
               className="px-5 py-2.5 border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition"
             >
-              Quay lại
+              {pick({ vi: 'Quay lai', en: 'Back', ja: '戻る' })}
             </button>
             <button
               onClick={handleFinalize}
@@ -336,11 +353,11 @@ const InvestmentReviewPage: React.FC = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Đang xử lý...
+                  {pick({ vi: 'Dang xu ly...', en: 'Processing...', ja: '処理中...' })}
                 </>
               ) : (
                 <>
-                  Xác nhận &amp; Hoàn thành
+                  {pick({ vi: 'Xac nhan & Hoan thanh', en: 'Confirm & Complete', ja: '確認して完了' })}
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>

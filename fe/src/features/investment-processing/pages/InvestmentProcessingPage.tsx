@@ -6,13 +6,7 @@ import LogoutButton from '@/features/logout/components/LogoutButton';
 import AssetOption from '../components/AssetOption';
 import { useInvestmentProcessing } from '../hooks/useInvestmentProcessing';
 import { AssetPrice } from '../type/investment-processing.type';
-
-const typeNames: Record<string, string> = {
-  EMERGENCY: 'Quỹ Khẩn cấp',
-  GOLD: 'Quỹ Vàng',
-  ETF: 'Quỹ ETF',
-  STOCK: 'Cổ Phiếu',
-};
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 interface InvestmentProcessingPageProps {
   sessionId: number;
@@ -28,6 +22,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
   recommendedAmount,
 }) => {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const [selectedAsset, setSelectedAsset] = useState<AssetPrice | null>(null);
   const [quantity, setQuantity] = useState<string>('');
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -48,8 +43,12 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
 
   const parsedQuantity = Number(quantity.replace(/[^\d.]/g, ''));
   const totalCost = selectedAsset ? selectedAsset.currentPrice * parsedQuantity : 0;
+  const maxBuyableQuantity = selectedAsset && selectedAsset.currentPrice > 0
+    ? Math.floor(recommendedAmount / selectedAsset.currentPrice)
+    : 0;
   const isValidQuantity = parsedQuantity > 0 && totalCost <= recommendedAmount;
   const residual = recommendedAmount - totalCost;
+  const assetTypeName = t(`assettype.${assetType.toLowerCase()}`, { fallback: assetType });
 
   const handleSelectAsset = async () => {
     if (!selectedAsset || !isValidQuantity) return;
@@ -64,7 +63,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
       });
       setStep('confirm');
     } catch {
-      setSubmitError('Không thể chọn tài sản. Vui lòng thử lại.');
+      setSubmitError(t('processing.selectError'));
     }
   };
 
@@ -78,7 +77,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
         router.push('/investment-recommendations');
       }, 1500);
     } catch {
-      setSubmitError('Không thể hoàn thành phân bổ. Vui lòng thử lại.');
+      setSubmitError(t('processing.completeError'));
     }
   };
 
@@ -90,7 +89,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          <p className="text-sm text-slate-500">Đang tải danh sách tài sản...</p>
+          <p className="text-sm text-slate-500">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -105,8 +104,8 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Phân bổ hoàn thành!</h2>
-          <p className="text-sm text-slate-500">Đang quay lại màn hình đề xuất...</p>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">{t('processing.doneTitle')}</h2>
+          <p className="text-sm text-slate-500">{t('processing.doneSubtitle')}</p>
         </div>
       </div>
     );
@@ -119,10 +118,10 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Xử lý {typeNames[assetType] ?? assetType}
+              {t('processing.pageTitle', { params: { typeName: assetTypeName } })}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Phiên #{sessionId} • Phân bổ #{allocationId}
+              {t('processing.sessionInfo', { params: { sessionId, allocationId } })}
             </p>
           </div>
           <LogoutButton />
@@ -130,7 +129,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
 
         {/* Steps */}
         <div className="flex items-center gap-2 mb-8">
-          {['Số tiền & Chiến lược', 'Xử lý danh mục', 'Xem lại', 'Hoàn thành'].map((s, i) => (
+          {[t('processing.step.money'), t('processing.step.processing'), t('processing.step.review'), t('processing.step.complete')].map((s, i) => (
             <React.Fragment key={s}>
               <div className={`flex items-center gap-2 text-xs font-medium ${i === 1 ? 'text-emerald-700' : i === 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -147,14 +146,14 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-500">Ngân sách đề xuất</p>
-              <p className="text-xl font-bold text-slate-900 mt-0.5">{formatCurrency(recommendedAmount)}</p>
+              <p className="text-xs text-slate-500">{t('processing.budget')}</p>
+              <p className="text-xl font-bold text-slate-900 mt-0.5">{formatCurrency(recommendedAmount, 'VND', locale)}</p>
             </div>
             {selectedAsset && parsedQuantity > 0 && (
               <div className="text-right">
-                <p className="text-xs text-slate-500">Dự kiến chi</p>
+                <p className="text-xs text-slate-500">{t('processing.estimatedCost')}</p>
                 <p className={`text-xl font-bold mt-0.5 ${isValidQuantity ? 'text-emerald-700' : 'text-red-600'}`}>
-                  {formatCurrency(totalCost)}
+                  {formatCurrency(totalCost, 'VND', locale)}
                 </p>
               </div>
             )}
@@ -162,14 +161,14 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
           {selectedAsset && parsedQuantity > 0 && (
             <div className="mt-3 pt-3 border-t border-slate-100">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-500">Dư lại</span>
+                <span className="text-slate-500">{t('processing.residual')}</span>
                 <span className={`font-semibold ${residual >= 0 ? 'text-slate-700' : 'text-red-600'}`}>
-                  {formatCurrency(Math.max(residual, 0))}
+                  {formatCurrency(Math.max(residual, 0), 'VND', locale)}
                 </span>
               </div>
               {!isValidQuantity && parsedQuantity > 0 && (
                 <p className="mt-2 text-xs text-red-600 font-medium">
-                  ⚠ Số tiền vượt ngân sách đề xuất
+                  ⚠ {t('processing.overBudget')}
                 </p>
               )}
             </div>
@@ -181,14 +180,14 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
             {/* Asset list */}
             <div>
-              <h2 className="text-base font-semibold text-slate-900 mb-1">Chọn tài sản</h2>
+              <h2 className="text-base font-semibold text-slate-900 mb-1">{t('processing.assetTitle')}</h2>
               <p className="text-xs text-slate-500 mb-4">
-                {`${assets.length} tài sản đang hoạt động`}
+                {t('processing.assetCount', { params: { count: assets.length } })}
               </p>
 
               {assets.length === 0 ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                  Không có tài sản khả dụng cho loại {assetType}.
+                  {t('processing.noAsset', { params: { assetType: assetTypeName } })}
                 </div>
               ) : (
                 <div className="space-y-2.5 max-h-64 overflow-y-auto">
@@ -215,27 +214,42 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
 
             {/* Quantity input */}
             <div>
-              <h2 className="text-base font-semibold text-slate-900 mb-1">Số lượng</h2>
+              <h2 className="text-base font-semibold text-slate-900 mb-1">{t('processing.quantityTitle')}</h2>
               <p className="text-xs text-slate-500 mb-4">
                 {selectedAsset
-                  ? `Giá hiện tại: ${formatUnitPrice(selectedAsset.currentPrice)} / đơn vị`
-                  : 'Chọn tài sản trước'}
+                  ? t('processing.currentPrice', { params: { price: formatUnitPrice(selectedAsset.currentPrice, locale) } })
+                  : t('processing.chooseAssetFirst')}
               </p>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                disabled={!selectedAsset}
-                placeholder="Nhập số lượng..."
-                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-base font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition hover:border-slate-400 disabled:opacity-50 disabled:bg-slate-50"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  disabled={!selectedAsset}
+                  placeholder={t('processing.quantityPlaceholder')}
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-base font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition hover:border-slate-400 disabled:opacity-50 disabled:bg-slate-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setQuantity(String(maxBuyableQuantity))}
+                  disabled={!selectedAsset || maxBuyableQuantity <= 0}
+                  className="shrink-0 px-4 py-3 border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm rounded-xl hover:bg-emerald-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {t('processing.maxButton')}
+                </button>
+              </div>
+              {selectedAsset && maxBuyableQuantity > 0 && (
+                <p className="mt-2 text-xs text-slate-500">
+                  {t('processing.maxHint', { params: { max: maxBuyableQuantity } })}
+                </p>
+              )}
             </div>
 
             {(isSelectError || submitError) && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {submitError ?? 'Không thể chọn tài sản. Vui lòng thử lại.'}
+                {submitError ?? t('processing.selectError')}
               </div>
             )}
 
@@ -245,7 +259,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
                 onClick={() => router.back()}
                 className="px-5 py-2.5 border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition"
               >
-                Quay lại
+                {t('common.back')}
               </button>
               <button
                 type="button"
@@ -259,11 +273,11 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Đang xử lý...
+                    {t('processing.submitting')}
                   </>
                 ) : (
                   <>
-                    Xác nhận chọn
+                    {t('processing.submit')}
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
@@ -283,18 +297,18 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <h2 className="text-base font-semibold text-slate-900">Xác nhận phân bổ</h2>
-              <p className="text-xs text-slate-500 mt-1">Kiểm tra thông tin trước khi hoàn thành</p>
+              <h2 className="text-base font-semibold text-slate-900">{t('processing.confirmTitle')}</h2>
+              <p className="text-xs text-slate-500 mt-1">{t('processing.confirmSubtitle')}</p>
             </div>
 
             <div className="rounded-xl bg-slate-50 border border-slate-100 divide-y divide-slate-100">
               {[
-                { label: 'Mã tài sản', value: selectResult.assetCode },
-                { label: 'Tên tài sản', value: selectResult.assetName },
-                { label: 'Số lượng', value: String(selectResult.quantity) },
-                { label: 'Giá hiện tại', value: formatUnitPrice(selectResult.currentPrice) },
-                { label: 'Đã đầu tư', value: formatCurrency(selectResult.investedAmount) },
-                { label: 'Dư lại', value: formatCurrency(selectResult.residualAmount) },
+                { label: t('processing.field.assetCode'), value: selectResult.assetCode },
+                { label: t('processing.field.assetName'), value: selectResult.assetName },
+                { label: t('processing.field.quantity'), value: String(selectResult.quantity) },
+                { label: t('processing.field.currentPrice'), value: formatUnitPrice(selectResult.currentPrice, locale) },
+                { label: t('processing.field.invested'), value: formatCurrency(selectResult.investedAmount, 'VND', locale) },
+                { label: t('processing.field.residual'), value: formatCurrency(selectResult.residualAmount, 'VND', locale) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between px-4 py-3">
                   <span className="text-xs text-slate-500">{label}</span>
@@ -305,7 +319,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
 
             {(isCompleteError || submitError) && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {submitError ?? 'Không thể hoàn thành phân bổ. Vui lòng thử lại.'}
+                {submitError ?? t('processing.completeError')}
               </div>
             )}
 
@@ -315,7 +329,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
                 onClick={() => setStep('select')}
                 className="px-5 py-2.5 border border-slate-300 text-slate-700 font-semibold text-sm rounded-xl hover:bg-slate-50 transition"
               >
-                Chỉnh sửa
+                {t('processing.edit')}
               </button>
               <button
                 type="button"
@@ -329,11 +343,11 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Đang hoàn thành...
+                    {t('processing.completing')}
                   </>
                 ) : (
                   <>
-                    Hoàn thành phân bổ
+                    {t('processing.complete')}
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -351,6 +365,7 @@ const InvestmentProcessingContent: React.FC<InvestmentProcessingPageProps> = ({
 const InvestmentProcessingPage: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
 
   const sessionIdRaw = searchParams.get('sessionId');
   const allocationIdRaw = searchParams.get('allocationId');
@@ -371,13 +386,13 @@ const InvestmentProcessingPage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 mb-2">Thiếu thông tin</h1>
-          <p className="text-sm text-slate-500 mb-6">Không tìm thấy thông tin phân bổ.</p>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">{t('processing.missingTitle')}</h1>
+          <p className="text-sm text-slate-500 mb-6">{t('processing.missingSubtitle')}</p>
           <button
             onClick={() => router.push('/investment-recommendations')}
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
-            Quay lại đề xuất
+            {t('processing.backToRecommendations')}
           </button>
         </div>
       </div>

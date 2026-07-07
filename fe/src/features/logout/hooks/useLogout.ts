@@ -2,7 +2,7 @@ import { useRouter } from 'next/navigation';
 import { useLogoutMutation } from '../services/logout.api';
 import { clearAuthTokens, setLoggedOutFlag } from '@/common/utils/authSession';
 
-const CLEAR_KEYS = ['investmentAllocations', 'investmentCompleteResult'];
+const CLEAR_KEYS = ['investmentAllocations', 'investmentCompleteResult', 'profileSettings', 'appNotifications', 'investmentAutoInvestResult'];
 
 const clearSession = () => {
   CLEAR_KEYS.forEach((key) => localStorage.removeItem(key));

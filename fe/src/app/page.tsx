@@ -3,9 +3,11 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { hasAuthToken, isLoggedOut } from '@/common/utils/authSession';
+import { useI18n } from '@/common/i18n/I18nProvider';
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     const token = hasAuthToken();
@@ -26,7 +28,7 @@ export default function Home() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Đang chuyển hướng...</p>
+        <p className="mt-4 text-gray-600">{t('home.redirecting')}</p>
       </div>
     </div>
   );

@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: asset
+
+  # Production Database Configuration (Railway)
+  datasource:
+    url: jdbc:mysql://viaduct.proxy.rlwy.net:36228/asset_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    password: 'MQTRfyRKCFZdhGrMpAbKXJNebafyHFLw'
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+    database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+
+  # Task Scheduling Configuration
+  task:
+    scheduling:
+      pool:
+        size: 10
+      thread-name-prefix: asset-scheduler-
+
+  # Email Configuration (Gmail SMTP)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tranvanminhnhat99@gmail.com
+    password: 'xsxw nqab vesg hzfp'
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  # Message Internationalization
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+# Logging Configuration for Production
+logging:
+  level:
+    root: WARN
+    com.vn.asset: INFO
+  file:
+    name: logs/asset-scheduler.log
+    max-size: 10MB
+    max-history: 30
+
+# Application Configuration
+app:
+  frontend:
+    login-url: http://localhost:3000/login
+    home-url: http://localhost:3000/home
+
+  api:
+    fireant:
+      base-url: https://api.fireant.vn
+      quote-endpoint: /quote/{symbol}
+      timeout-ms: 10000
+      retry-count: 3
+
+    sjc:
+      base-url: https://sjc.com.vn
+      price-url: https://sjc.com.vn/GoldPrice/Services/PriceService.ashx
+      timeout-ms: 15000
+      user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+
+asset:
+  fireant:
+    stock-codes: TCB,FPT,VCB,BAA,BID,VNI,VIC,HDB,ACB,MBB,CTG,VIB,STB,CEO,BCS
+    etf-codes: E1VFVN30,FUEVFVND,VFIBL,VFVNDPX,VFEVFVND,VVNF,VESAF
+
+  schedule:
+    daily-sync-cron: "0 0 8 * * *"
+    intraday-sync-cron: "0 */15 8-15 * * MON-FRI"
+    gold-sync-cron: "0 0 * * * *"
+    timezone: Asia/Ho_Chi_Minh
+

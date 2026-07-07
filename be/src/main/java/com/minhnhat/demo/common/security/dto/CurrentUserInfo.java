@@ -8,6 +8,8 @@ import lombok.Getter;
 public class CurrentUserInfo {
     private String userId;
     private String email;
+    private String fullName;
+    private String avatarUrl;
     private String role;
     private String status;
 }
