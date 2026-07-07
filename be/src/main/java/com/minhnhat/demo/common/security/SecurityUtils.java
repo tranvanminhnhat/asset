@@ -20,9 +20,10 @@ public class SecurityUtils {
                 throw new RuntimeException("User not authenticated");
             }
 
-            if (!(authentication.getPrincipal() instanceof UserPrincipal principal)) {
-                log.warn("Authentication principal is not UserPrincipal. Principal type: {}", 
-                        authentication.getPrincipal().getClass().getName());
+            Object principalObject = authentication.getPrincipal();
+            if (!(principalObject instanceof UserPrincipal principal)) {
+                log.warn("Authentication principal is not UserPrincipal. Principal type: {}",
+                        principalObject != null ? principalObject.getClass().getName() : "null");
                 throw new RuntimeException("User not authenticated");
             }
 
@@ -30,6 +31,8 @@ public class SecurityUtils {
             return CurrentUserInfo.builder()
                     .userId(principal.getUserId())
                     .email(principal.getEmail())
+                    .fullName(principal.getFullName())
+                    .avatarUrl(principal.getAvatarUrl())
                     .build();
         } catch (Exception e) {
             log.error("Error getting current user from SecurityContext", e);

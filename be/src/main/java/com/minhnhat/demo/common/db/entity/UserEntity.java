@@ -19,6 +19,12 @@ public class UserEntity extends BaseEntity {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
+    @Column(name = "full_name", length = 255)
+    private String fullName;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
@@ -30,5 +36,15 @@ public class UserEntity extends BaseEntity {
 
     @Column(name = "token", length = 2000)
     private String token;
+
+    @Builder.Default
+    @Column(name = "auto_invest_enabled", nullable = false)
+    private Boolean autoInvestEnabled = Boolean.FALSE;
+
+    @Column(name = "investment_style", length = 30)
+    private String investmentStyle;
+
+    @Column(name = "auto_invest_day_of_month")
+    private Integer autoInvestDayOfMonth;
 }
 
