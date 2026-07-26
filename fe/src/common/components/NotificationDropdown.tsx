@@ -11,6 +11,8 @@ interface NotificationDropdownProps {
   onClose: () => void;
   onMarkAllRead: () => void;
   onSelectNotification: (notification: NotificationResponse) => void;
+  isProcessing?: boolean;
+  processingNotificationId?: number | null;
 }
 
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
@@ -19,8 +21,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   onClose,
   onMarkAllRead,
   onSelectNotification,
+  isProcessing = false,
+  processingNotificationId = null,
 }) => {
-  const { locale } = useI18n();
+  const { locale, pick } = useI18n();
 
   if (!open) {
     return null;
@@ -37,7 +41,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         </div>
         <button
           onClick={onMarkAllRead}
-          className="rounded-full px-2 py-1 text-xs font-semibold text-emerald-700 transition-all duration-150 ease-out hover:bg-emerald-50 hover:text-emerald-800 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+          disabled={isProcessing}
+          className="rounded-full px-2 py-1 text-xs font-semibold text-emerald-700 transition-all duration-150 ease-out hover:bg-emerald-50 hover:text-emerald-800 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         >
           Mark all read
         </button>
@@ -52,7 +57,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               key={notification.id}
               type="button"
               onClick={() => onSelectNotification(notification)}
-              className={`group w-full border-b border-slate-100 px-4 py-3 text-left transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-slate-50 active:translate-y-0 active:scale-[0.998] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 ${notification.status === 'NEW' ? 'bg-emerald-50/40' : 'bg-white'}`}
+              disabled={isProcessing}
+              className={`group w-full border-b border-slate-100 px-4 py-3 text-left transition-all duration-150 ease-out hover:-translate-y-[1px] hover:bg-slate-50 active:translate-y-0 active:scale-[0.998] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:bg-inherit ${notification.status === 'NEW' ? 'bg-emerald-50/40' : 'bg-white'} ${isProcessing ? 'opacity-70' : ''}`}
             >
               <div className="flex items-start gap-3">
                 <span
@@ -61,7 +67,17 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-semibold text-slate-900">{notification.title}</p>
-                    <span className="shrink-0 text-[11px] text-slate-400">{notification.createdAt ? formatDateTime(notification.createdAt, locale) : ''}</span>
+                    {isProcessing && processingNotificationId === notification.id ? (
+                      <span className="inline-flex items-center gap-1.5 shrink-0 text-[11px] font-semibold text-emerald-700">
+                        <svg className="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {pick({ vi: 'Dang xu ly...', en: 'Processing...', ja: '処理中...' })}
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-[11px] text-slate-400">{notification.createdAt ? formatDateTime(notification.createdAt, locale) : ''}</span>
+                    )}
                   </div>
                   <p className="mt-1 text-xs leading-5 text-slate-600">{notification.message}</p>
                   <div className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-emerald-700">
@@ -79,7 +95,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
         <button
           onClick={onClose}
-          className="rounded-full px-2 py-1 font-semibold text-slate-600 transition-all duration-150 ease-out hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/30"
+          disabled={isProcessing}
+          className="rounded-full px-2 py-1 font-semibold text-slate-600 transition-all duration-150 ease-out hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
         >
           Close
         </button>
